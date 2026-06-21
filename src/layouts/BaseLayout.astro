@@ -1,0 +1,28 @@
+---
+const { title = "inDscent Fragrances" } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/assets/logo.jpg" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <slot name="head" />
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+    <footer style="text-align:center;padding:1rem;font-size:0.75rem;color:#888;margin-top:2rem;">
+      <a href="/admin/login" style="color:#888;text-decoration:none;">&copy; 2026 inDscent Fragrances</a>
+    </footer>
+    <script is:inline>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,226 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Consolidated Orders">
+  <link rel="stylesheet" href="/admin.css" slot="head" />
+
+  <div class="admin-header">
+    <div class="admin-header-left">
+      <img src="/assets/logo.jpg" alt="inDscent Logo" />
+      <div class="admin-header-title">
+        <h1>INDSCENT ADMIN</h1>
+        <p>"Your Signature Identity In Every Drop"</p>
+      </div>
+    </div>
+    <a href="/admin/login" class="logout-btn" id="logout-btn">LOGOUT</a>
+  </div>
+
+  <div class="admin-nav">
+    <a href="/admin/inbox/">INBOX</a>
+    <a href="/admin/consolidated/" class="active">CONSOLIDATED</a>
+    <a href="/admin/archived/">ARCHIVED</a>
+    <a href="/admin/deleted/">DELETED</a>
+    <a href="/admin/maintenance/">MAINTENANCE</a>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-box">
+      <div class="admin-box-title">
+        <span>CONSOLIDATED ORDER</span>
+        <span id="order-count"></span>
+      </div>
+      <div class="admin-box-body">
+        <div id="orders-container">
+          <p class="loading-msg">Loading orders...</p>
+        </div>
+        <div id="boxes-container"></div>
+        <div id="archive-section" style="display:none;margin-top:1.5rem;border-top:2px solid #1a1a2e;padding-top:1rem;">
+          <label style="font-weight:bold;color:#1a1a2e;display:block;margin-bottom:0.5rem;">Supplier Invoice Number</label>
+          <input type="text" id="invoice-input" placeholder="Enter invoice number" style="width:100%;padding:0.7rem;border:1px solid #ccc;font-size:1rem;margin-bottom:0.8rem;" />
+          <button class="submit-btn" onclick="archiveOrders()">FINALIZE ORDER</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .submit-btn { width:100%; padding:1rem; background:#1a1a2e; color:#c9a84c; border:none; font-size:1rem; font-weight:bold; cursor:pointer; letter-spacing:2px; }
+    .submit-btn:hover { background:#c9a84c; color:#1a1a2e; }
+    .badge { display:inline-block; font-size:0.7rem; font-weight:bold; padding:0.15rem 0.4rem; border-radius:3px; margin-right:0.2rem; }
+    .badge-m { background:#d0e8f8; color:#1a4a7a; }
+    .badge-f { background:#f8d7e8; color:#9b3a6b; }
+  </style>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (sessionStorage.getItem('admin_auth') !== 'true') {
+        window.location.href = '/admin/login';
+        return;
+      }
+      document.getElementById('logout-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        sessionStorage.removeItem('admin_auth');
+        window.location.href = '/admin/login';
+      });
+      loadOrders();
+    });
+
+    function gBadge(gender) {
+      if (gender === 'female') return '<span class="badge badge-f">F</span>';
+      if (gender === 'male') return '<span class="badge badge-m">M</span>';
+      return '';
+    }
+
+    function getDisplayVolume(row) {
+      if (row.volume && row.volume.trim() !== '') {
+        return row.volume;
+      }
+      var prod = (row.product_name || '').toLowerCase();
+      var g = (row.gender || '').toLowerCase();
+      if (prod.indexOf('standard perfume') !== -1) {
+        return g === 'male' ? '60ml' : '50ml';
+      }
+      if (prod.indexOf('mini perfume') !== -1) {
+        return '30ml';
+      }
+      if (prod.indexOf('roll-on') !== -1 || prod.indexOf('deodorant') !== -1) {
+        return '50ml';
+      }
+      return ''; 
+    }
+
+    function loadOrders() {
+      fetch('/api/get-orders?status=consolidated&admin=true')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var container = document.getElementById('orders-container');
+          var archiveSection = document.getElementById('archive-section');
+
+          if (!data.orders || data.orders.length === 0) {
+            container.innerHTML = '<p class="empty-msg">No orders to consolidate.</p>';
+            return;
+          }
+
+          var filtered = data.orders.filter(function(r) {
+            return r.fragrance_name !== 'BUNDLE_TOTAL';
+          });
+
+          archiveSection.style.display = 'block';
+
+          // PERMANENT FRONTEND FIX: Group items by Fragrance + Product Name + Gender to combine duplicates into one row
+          var finalGroupedData = {};
+          
+          filtered.forEach(function(r) {
+            var size = getDisplayVolume(r);
+            // Create a unique matching key combination string
+            var uniqueGroupKey = r.fragrance_name + '||' + r.product_name + '||' + r.gender;
+            
+            if (!finalGroupedData[uniqueGroupKey]) {
+              finalGroupedData[uniqueGroupKey] = {
+                gender: r.gender,
+                fragrance_name: r.fragrance_name,
+                product_name: r.product_name,
+                volume: size,
+                quantity: 0,
+                buyersArray: []
+              };
+            }
+            
+            // Add quantities together
+            finalGroupedData[uniqueGroupKey].quantity += Number(r.quantity || 1);
+            
+            // Append buyer name lists neatly
+            if (r.buyers) {
+              finalGroupedData[uniqueGroupKey].buyersArray.push(r.buyers);
+            }
+          });
+
+          var finalRowsArray = Object.values(finalGroupedData);
+          document.getElementById('order-count').textContent = finalRowsArray.length + ' supplier lines';
+
+          var boxes = [];
+          finalRowsArray.forEach(function(r) {
+            if (r.product_name === 'Standard Perfume' && r.gender === 'female') boxes.push({ desc: '50ml Female Box', qty: r.quantity });
+            if (r.product_name === 'Mini Perfume' && r.gender === 'female') boxes.push({ desc: '30ml Female Box', qty: r.quantity });
+            if (r.product_name === 'Standard Perfume' && r.gender === 'male') boxes.push({ desc: '60ml Male Box', qty: r.quantity });
+            if (r.product_name === 'Mini Perfume' && r.gender === 'male') boxes.push({ desc: '30ml Male Box', qty: r.quantity });
+          });
+
+          container.innerHTML = '<table class="admin-table"><thead><tr>' +
+            '<th></th><th>Fragrance</th><th>Product</th><th>Size</th><th>Qty</th><th>Buyers</th>' +
+            '</tr></thead><tbody>' +
+            finalRowsArray.map(function(r) {
+              // Flatten nested buyer text pools and strip duplicate entries cleanly
+              var uniqueBuyersList = Array.from(new Set(r.buyersArray.join(', ').split(', '))).join(', ');
+
+              return '<tr>' +
+                '<td>' + gBadge(r.gender) + '</td>' +
+                '<td>' + r.fragrance_name + '</td>' +
+                '<td>' + r.product_name + '</td>' +
+                '<td>' + r.volume + '</td>' +
+                '<td><strong>' + r.quantity + '</strong></td>' +
+                '<td><small>' + uniqueBuyersList + '</small></td>' +
+              '</tr>';
+            }).join('') +
+          '</tbody></table>';
+
+          if (boxes.length > 0) {
+            var consolidatedBoxes = {};
+            boxes.forEach(function(b) {
+              if (!consolidatedBoxes[b.desc]) consolidatedBoxes[b.desc] = 0;
+              consolidatedBoxes[b.desc] += b.qty;
+            });
+            var packagingRows = Object.entries(consolidatedBoxes).map(function(e) {
+              var parts = e[0].split(' ');
+              var size = parts[0];
+              var boxDesc = parts.slice(1).join(' ');
+              return '<tr style="background:#f9f5ec;font-style:italic;color:#666;">' +
+                '<td></td>' +
+                '<td>Packaging Required</td>' +
+                '<td>' + boxDesc + '</td>' +
+                '<td>' + size + '</td>' +
+                '<td><strong>' + e[1] + '</strong></td>' +
+                '<td></td>' +
+              '</tr>';
+            }).join('');
+            document.querySelector('.admin-table tbody').insertAdjacentHTML('beforeend', packagingRows);
+          }
+        })
+        .catch(function(err) {
+          console.error(err);
+          document.getElementById('orders-container').innerHTML = '<p class="empty-msg">Could not load orders.</p>';
+        });
+    }
+
+    function archiveOrders() {
+      var invoice = document.getElementById('invoice-input').value.trim();
+      if (!invoice) { alert('Please enter a supplier invoice number!'); return; }
+      if (!confirm('Archive ALL inbox orders with invoice ' + invoice + '?')) return;
+      
+      fetch('/api/update-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'archive', invoice_number: invoice })
+      })
+      .then(function(res) {
+        if (!res.ok) {
+          return res.text().then(function(errText) {
+            throw new Error('Server Error ' + res.status + ': ' + errText);
+          });
+        }
+        return res.json();
+      })
+      .then(function(data) {
+        if (data.success) {
+          alert('Orders archived successfully!');
+          loadOrders();
+        } else if (data.error) {
+          alert('Backend Error: ' + data.error);
+        }
+      })
+      .catch(function(err) {
+        alert('Failed to complete request:\n' + err.message);
+      });
+    }
+  </script>
+</BaseLayout>

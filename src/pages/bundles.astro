@@ -1,0 +1,251 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Bundles">
+  <link rel="stylesheet" href="/bundles.css" slot="head" />
+
+  <div class="page-header">
+    <div class="header-left">
+      <a href="/home/"><img src="/assets/logo.jpg" alt="inDscent Logo" /></a>
+      <div class="header-title">
+        <h1>INDSCENT</h1>
+        <p>"Your Signature Identity In Every Drop"</p>
+        <small>indscentfragrances@gmail.com</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-box">
+      <div class="section-title">PRODUCT BUNDLES</div>
+      <div class="section-body">
+        <div id="bundles-container">
+          <p class="loading-msg">Loading bundles...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="cart-section" style="display:none;">
+    <div class="section-box">
+      <div class="section-title">BUNDLED SHOPPING CART</div>
+      <div class="section-body">
+        <div id="cart-container"></div>
+        <div class="cart-total-row" id="cart-total-row" style="display:none;">
+          <span class="cart-total-label">Total:</span>
+          <span class="cart-total-amount" id="cart-total-amount">R0</span>
+        </div>
+        <a href="/client/" class="place-order-btn">PROCEED TO ORDER PAGE</a>
+        <p class="proceed-hint">Your bundle selections are saved — add individual items or place your order on the next page.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <a href="/client/" class="back-btn">Back to Orders page</a>
+  </div>
+
+<script is:inline>
+    var femaleFragrances = [];
+    var maleFragrances = [];
+
+    async function loadData() {
+      try {
+        var fragRes = await fetch('/api/get-fragrances');
+        var fragData = await fragRes.json();
+        femaleFragrances = fragData.female || [];
+        maleFragrances = fragData.male || [];
+        await loadBundles();
+      } catch(e) {
+        document.getElementById('bundles-container').innerHTML =
+          '<p class="loading-msg">Failed to load data. Please try again.</p>';
+      }
+    }
+
+    async function loadBundles() {
+      try {
+        var res = await fetch('/api/get-bundles');
+        var bundles = await res.json();
+        renderBundles(bundles);
+        renderCart();
+      } catch(err) {
+        document.getElementById('bundles-container').innerHTML =
+          '<p class="loading-msg">Failed to load bundles. Please try again.</p>';
+      }
+    }
+
+    function renderBundles(bundles) {
+      var container = document.getElementById('bundles-container');
+      if (!bundles.length) {
+        container.innerHTML = '<p class="loading-msg">No bundles available.</p>';
+        return;
+      }
+
+      window._bundleData = {};
+
+      container.innerHTML = bundles.map(function(bundle) {
+        window._bundleData[bundle.bundle_id] = {
+          bundle_id: bundle.bundle_id,
+          bundle_name: bundle.bundle_name,
+          price: bundle.price,
+          items: bundle.items.map(function(item) {
+            return { product_type: item.product_type, gender: null, fragrance: null };
+          })
+        };
+
+        var itemRows = bundle.items.map(function(item, index) {
+          return '<div class="bundle-item-row">' +
+            '<span class="product-label">' + item.product_type + '</span>' +
+            '<button class="gender-btn" id="gbtn-' + bundle.bundle_id + '-' + index + '" ' +
+              'onclick="toggleGender(\'' + bundle.bundle_id + '\',' + index + ')">M/F</button>' +
+            '<select class="bundle-fragrance-select" id="frag-' + bundle.bundle_id + '-' + index + '" disabled ' +
+              'onchange="selectFragrance(\'' + bundle.bundle_id + '\',' + index + ',this.value)">' +
+              '<option value="">Choose Fragrance</option>' +
+            '</select>' +
+          '</div>';
+        }).join('');
+
+        return '<div class="bundle-card" id="card-' + bundle.bundle_id + '">' +
+          '<div class="bundle-header">' +
+            '<div class="bundle-title-group">' +
+              '<span class="bundle-id-badge">' + bundle.bundle_id + '</span>' +
+              '<span class="bundle-name">' + bundle.bundle_name + '</span>' +
+            '</div>' +
+            '<span class="bundle-price">R' + bundle.price + '</span>' +
+          '</div>' +
+          itemRows +
+          '<div class="add-to-cart-row">' +
+            '<span class="success-flash" id="flash-' + bundle.bundle_id + '">Successfully added!</span>' +
+            '<button class="clear-btn" onclick="resetBundle(\'' + bundle.bundle_id + '\')">Clear</button>' +
+            '<button class="add-to-cart-btn" id="atc-' + bundle.bundle_id + '" ' +
+              'onclick="addToCart(\'' + bundle.bundle_id + '\')">Add to Cart</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function toggleGender(bundleId, index) {
+      var data = window._bundleData[bundleId];
+      var current = data.items[index].gender;
+      var next = current === 'F' ? 'M' : 'F';
+      data.items[index].gender = next;
+      data.items[index].fragrance = null;
+
+      var btn = document.getElementById('gbtn-' + bundleId + '-' + index);
+      btn.textContent = next;
+      btn.className = next === 'F' ? 'gender-btn active-female' : 'gender-btn active-male';
+
+      var fragrances = next === 'M' ? maleFragrances : femaleFragrances;
+      var select = document.getElementById('frag-' + bundleId + '-' + index);
+      select.innerHTML = '<option value="">Choose Fragrance</option>' +
+        fragrances.map(function(f) {
+          return '<option value="' + f + '">' + f + '</option>';
+        }).join('');
+      select.disabled = false;
+      select.className = 'bundle-fragrance-select';
+
+      checkCartReady(bundleId);
+    }
+
+    function selectFragrance(bundleId, index, value) {
+      window._bundleData[bundleId].items[index].fragrance = value || null;
+      var select = document.getElementById('frag-' + bundleId + '-' + index);
+      select.className = value ? 'bundle-fragrance-select selected' : 'bundle-fragrance-select';
+      checkCartReady(bundleId);
+    }
+
+    function checkCartReady(bundleId) {
+      var data = window._bundleData[bundleId];
+      var allReady = data.items.every(function(item) {
+        return item.gender && item.fragrance;
+      });
+      var btn = document.getElementById('atc-' + bundleId);
+      btn.className = allReady ? 'add-to-cart-btn ready' : 'add-to-cart-btn';
+    }
+
+    function addToCart(bundleId) {
+      var data = window._bundleData[bundleId];
+      var cart = JSON.parse(localStorage.getItem('bundleCart') || '[]');
+      cart.push(JSON.parse(JSON.stringify(data)));
+      localStorage.setItem('bundleCart', JSON.stringify(cart));
+
+      var flash = document.getElementById('flash-' + bundleId);
+      flash.classList.add('show');
+      setTimeout(function() {
+        flash.classList.remove('show');
+        resetBundle(bundleId);
+      }, 1000);
+
+      renderCart();
+    }
+
+    function resetBundle(bundleId) {
+      var data = window._bundleData[bundleId];
+      data.items.forEach(function(item, index) {
+        item.gender = null;
+        item.fragrance = null;
+        var btn = document.getElementById('gbtn-' + bundleId + '-' + index);
+        btn.textContent = 'M/F';
+        btn.className = 'gender-btn';
+        var select = document.getElementById('frag-' + bundleId + '-' + index);
+        select.innerHTML = '<option value="">Choose Fragrance</option>';
+        select.disabled = true;
+        select.className = 'bundle-fragrance-select';
+      });
+      document.getElementById('atc-' + bundleId).className = 'add-to-cart-btn';
+    }
+
+    function removeFromCart(index) {
+      var cart = JSON.parse(localStorage.getItem('bundleCart') || '[]');
+      cart.splice(index, 1);
+      localStorage.setItem('bundleCart', JSON.stringify(cart));
+      renderCart();
+    }
+
+    function renderCart() {
+      var cart = JSON.parse(localStorage.getItem('bundleCart') || '[]');
+      var cartSection = document.getElementById('cart-section');
+      var cartContainer = document.getElementById('cart-container');
+      var totalRow = document.getElementById('cart-total-row');
+      var totalAmount = document.getElementById('cart-total-amount');
+
+      if (!cart.length) {
+        cartSection.style.display = 'none';
+        return;
+      }
+
+      cartSection.style.display = 'block';
+      var grandTotal = 0;
+
+      cartContainer.innerHTML = cart.map(function(bundle, bundleIndex) {
+        grandTotal += bundle.price;
+        var itemLines = bundle.items.map(function(item) {
+          return '<div class="cart-item-line">' +
+            '<span class="cart-gender-badge ' + (item.gender === 'F' ? 'badge-female' : 'badge-male') + '">' + item.gender + '</span>' +
+            '<span class="cart-product">' + item.product_type + '</span>' +
+            '<span class="cart-fragrance">' + item.fragrance + '</span>' +
+          '</div>';
+        }).join('');
+
+        return '<div class="cart-bundle-row">' +
+          '<div class="cart-bundle-marker">B' + bundle.bundle_id.replace('B','') + '</div>' +
+          '<div class="cart-bundle-details">' +
+            '<div class="cart-bundle-header">' +
+              '<span class="cart-bundle-name">' + bundle.bundle_name + '</span>' +
+              '<span class="cart-bundle-price">R' + bundle.price + '</span>' +
+            '</div>' +
+            itemLines +
+          '</div>' +
+          '<button class="cart-delete-btn" onclick="removeFromCart(' + bundleIndex + ')">Delete</button>' +
+        '</div>';
+      }).join('');
+
+      totalRow.style.display = 'flex';
+      totalAmount.textContent = 'R' + grandTotal;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadData();
+    });
+  </script>
+</BaseLayout>

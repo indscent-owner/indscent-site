@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Admin Login">
+  <link rel="stylesheet" href="/admin.css" slot="head" />
+
+  <div class="login-wrapper">
+    <div class="login-box">
+      <a href="/home/"><img src="/assets/logo.jpg" alt="inDscent Logo" class="login-logo" /></a>
+      <h1>ADMIN ACCESS</h1>
+      <p class="login-sub">inDscent Fragrances</p>
+      <div class="form-group">
+        <input type="password" id="password" placeholder="Enter password" />
+      </div>
+      <button class="login-btn" id="login-btn">LOGIN</button>
+      <a href="/home/" class="back-link">← Back to Home</a>
+      <p class="error-msg" id="error-msg">Incorrect password. Try again.</p>
+    </div>
+  </div>
+
+  <style>
+    .back-link {
+      display: block;
+      margin-top: 1rem;
+      color: #888;
+      font-size: 0.85rem;
+      text-decoration: none;
+      letter-spacing: 1px;
+    }
+    .back-link:hover { color: #1a1a2e; }
+  </style>
+
+  <script is:inline>
+    var ADMIN_PASSWORD = 'L33H3ndr!ck5';
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('login-btn').addEventListener('click', function() {
+        var pwd = document.getElementById('password').value;
+        if (pwd === ADMIN_PASSWORD) {
+          sessionStorage.setItem('admin_auth', 'true');
+          window.location.href = '/admin/inbox/';
+        } else {
+          document.getElementById('error-msg').style.display = 'block';
+        }
+      });
+
+      document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') document.getElementById('login-btn').click();
+      });
+    });
+  </script>
+</BaseLayout>

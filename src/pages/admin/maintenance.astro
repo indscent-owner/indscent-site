@@ -1,0 +1,410 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="inDscent - Maintenance">
+  <link rel="stylesheet" href="/admin.css" slot="head" />
+
+  <div class="admin-header">
+    <div class="admin-header-left">
+      <img src="/assets/logo.jpg" alt="inDscent Logo" />
+      <div class="admin-header-title">
+        <h1>INDSCENT ADMIN</h1>
+        <p>"Your Signature Identity In Every Drop"</p>
+      </div>
+    </div>
+    <a href="/admin/login" class="logout-btn" id="logout-btn">LOGOUT</a>
+  </div>
+
+  <div class="admin-nav">
+    <a href="/admin/inbox">INBOX</a>
+    <a href="/admin/consolidated">CONSOLIDATED</a>
+    <a href="/admin/archived">ARCHIVED</a>
+    <a href="/admin/deleted">DELETED</a>
+    <a href="/admin/maintenance" class="active">MAINTENANCE</a>
+  </div>
+  <!-- EXPORT BOX -->
+  <div class="admin-box">
+    <div class="admin-box-title">DATABASE BACKUP & EXPORT</div>
+    <div class="admin-box-body" style="margin-bottom: 1.5rem;">
+      <p style="margin-bottom: 1rem; color: #555; font-size: 0.9rem;">
+        Download your current live database tables into CSV backups before making massive changes.
+      </p>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <button class="login-btn" id="export-fragrances-btn" style="max-width:250px; background:#2c3e50; border-color:#2c3e50;">DOWNLOAD FRAGRANCES CSV</button>
+        <button class="login-btn" id="export-products-btn" style="max-width:250px; background:#2c3e50; border-color:#2c3e50;">DOWNLOAD PRODUCTS CSV</button>
+      </div>
+      <div id="export-msg" style="margin-top:1rem; display:none; font-weight:bold;"></div>
+    </div>
+  </div>
+
+  <!-- IMPORT BOX -->
+  <div class="admin-box" style="margin-top:2rem;">
+    <div class="admin-box-title">DATABASE LIVE SYNC MAINTENANCE</div>
+    <div class="admin-box-body">
+      <p style="margin-bottom:1rem; color:#555; font-size:0.9rem;">
+        Upload your updated CSV file to refresh the catalog completely. The system automatically reads columns:
+        <strong>name</strong>, <strong>gender</strong> (female/male), and optional <strong>active</strong> (1 = visible, 0 = hidden).
+      </p>
+      <p style="margin-bottom:1rem; color:#555; font-size:0.85rem;">
+        Example Format:<br>
+        <code>name, gender, active</code><br>
+        <code>Chanel No 5, female, 1</code><br>
+        <code>Dior Sauvage, male, 1</code>
+      </p>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color:#1a1a2e;">Target Table Selection</label>
+        <select id="import-target" style="width:100%; padding:0.5rem; border:1px solid #ccc; background:#fff; font-size:1rem;">
+          <option value="fragrances">Fragrances Catalog</option>
+          <option value="products">Products Catalog</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label style="display:block; font-weight:bold; margin-bottom:0.5rem; color:#1a1a2e;">Select Updated CSV File</label>
+        <input type="file" id="csv-file" accept=".csv" style="width:100%; padding:0.5rem; border:1px solid #ccc;" />
+      </div>
+
+      <button class="login-btn" id="upload-btn" style="max-width:200px;">PUSH LIVE TO D1</button>
+      <div id="upload-msg" style="margin-top:1rem; display:none; font-weight:bold;"></div>
+
+      <div id="preview-container" style="margin-top:1.5rem; display:none;">
+        <div class="admin-box-title" style="margin-bottom:0.5rem;">STAGING QUEUE PREVIEW</div>
+        <div id="preview-table"></div>
+      </div>
+    </div>
+  </div>
+  <!-- BUNDLE MANAGEMENT BOX -->
+  <div class="admin-box" style="margin-top:2rem;">
+    <div class="admin-box-title">BUNDLE CONFIGURATION MAINTENANCE</div>
+    <div class="admin-box-body">
+      <p style="margin-bottom:1rem; color:#555; font-size:0.9rem;">
+        Create new package offerings or update pricing models, item constraints, and product descriptions directly inside the live catalog.
+      </p>
+
+      <form id="bundle-form" style="background:#f8f9fa; padding:1rem; border:1px solid #e2e8f0; margin-bottom:1.5rem;">
+        <input type="hidden" id="bundle-id" value="" />
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:1rem; margin-bottom:1rem;">
+          <div>
+            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Bundle Name</label>
+            <input type="text" id="bundle-name" placeholder="e.g., 3-Pack Sample Set" style="width:100%; padding:0.4rem; border:1px solid #ccc;" required />
+          </div>
+          <div>
+            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Price (in Cents/Base)</label>
+            <input type="number" id="bundle-price" placeholder="e.g., 2999" style="width:100%; padding:0.4rem; border:1px solid #ccc;" required />
+          </div>
+          <div>
+            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Female Options Volume</label>
+            <input type="text" id="bundle-vol-female" placeholder="e.g., 3x 5ml" style="width:100%; padding:0.4rem; border:1px solid #ccc;" />
+          </div>
+          <div>
+            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Male Options Volume</label>
+            <input type="text" id="bundle-vol-male" placeholder="e.g., 3x 5ml" style="width:100%; padding:0.4rem; border:1px solid #ccc;" />
+          </div>
+          <div>
+            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Visibility Status</label>
+            <select id="bundle-active" style="width:100%; padding:0.4rem; border:1px solid #ccc; background:#fff;">
+              <option value="1">Active (Visible)</option>
+              <option value="0">Inactive (Hidden)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:0.5rem;">
+          <button type="submit" class="login-btn" id="bundle-save-btn" style="max-width:180px; background:#27ae60; border-color:#27ae60;">SAVE BUNDLE</button>
+          <button type="button" class="login-btn" id="bundle-reset-btn" style="max-width:120px; background:#7f8c8d; border-color:#7f8c8d; display:none;">CANCEL</button>
+        </div>
+      </form>
+
+      <div id="bundle-msg" style="margin-bottom:1rem; display:none; font-weight:bold;"></div>
+      <button class="login-btn" id="load-bundles-btn" style="max-width:220px; background:#2980b9; border-color:#2980b9; margin-bottom:1rem;">FETCH CURRENT BUNDLES</button>
+      <div id="bundle-list-container"></div>
+    </div>
+  </div>
+  <!-- CLEANUP BOX -->
+  <div class="admin-box" style="margin-top:2rem;">
+    <div class="admin-box-title">ORDER LIST CLEANUP</div>
+    <div class="admin-box-body">
+      <p style="margin-bottom:1rem; color:#555; font-size:0.9rem;">
+        Click the button below to clear the visibility of current items in the Deleted view.
+        This hides them from your dashboard without removing them from the database.
+      </p>
+      <button class="login-btn" id="hide-deleted-btn" style="max-width:350px; background:#c0392b; border-color:#c0392b;">
+        REMOVE ALL CURRENT DELETED ORDERS FROM VIEW
+      </button>
+      <div id="cleanup-msg" style="margin-top:1rem; display:none; color:#155724; font-weight:bold;"></div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  // --- BUNDLE MANAGEMENT LOGIC IMPLEMENTATION ---
+  var bundleMsg = document.getElementById('bundle-msg');
+
+  function fetchAdminBundles() {
+    var container = document.getElementById('bundle-list-container');
+    container.innerHTML = '<p style="color:#666; font-style:italic;">Querying catalog table...</p>';
+
+    fetch('/api/export-csv?target=products')
+      .then(res => res.json())
+      .then(response => {
+        var data = response.data;
+        if (!data || data.length === 0) {
+          container.innerHTML = '<p style="color:#c0392b;">No bundles found inside the live database schema.</p>';
+          return;
+        }
+
+        var html = '<table class="admin-table"><thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Female Vol</th><th>Male Vol</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        data.forEach(function(b) {
+          html += '<tr>' +
+            '<td>' + b.id + '</td>' +
+            '<td><strong>' + b.name + '</strong></td>' +
+            '<td>' + b.price + '</td>' +
+            '<td>' + (b.volume_female || '-') + '</td>' +
+            '<td>' + (b.volume_male || '-') + '</td>' +
+            '<td>' + (b.active === 1 ? '<span style="color:#27ae60; font-weight:bold;">Active</span>' : '<span style="color:#7f8c8d;">Hidden</span>') + '</td>' +
+            '<td><button class="login-btn edit-b-btn" data-id="'+b.id+'" data-name="'+b.name+'" data-price="'+b.price+'" data-female="'+(b.volume_female||'')+'" data-male="'+(b.volume_male||'')+'" data-active="'+b.active+'" style="padding:0.2rem 0.5rem; font-size:0.8rem; background:#34495e; border-color:#34495e;">EDIT</button></td>' +
+          '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+
+        // Attach dynamic clicks
+        document.querySelectorAll('.edit-b-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            document.getElementById('bundle-id').value = this.getAttribute('data-id');
+            document.getElementById('bundle-name').value = this.getAttribute('data-name');
+            document.getElementById('bundle-price').value = this.getAttribute('data-price');
+            document.getElementById('bundle-vol-female').value = this.getAttribute('data-female');
+            document.getElementById('bundle-vol-male').value = this.getAttribute('data-male');
+            document.getElementById('bundle-active').value = this.getAttribute('data-active');
+
+            document.getElementById('bundle-save-btn').textContent = 'UPDATE CHANGE LIVE';
+            document.getElementById('bundle-reset-btn').style.display = 'inline-block';
+          });
+        });
+      })
+      .catch(err => { container.innerHTML = '<p style="color:#c0392b;">Fetch failure: ' + err.message + '</p>'; });
+  }
+
+  document.getElementById('load-bundles-btn').addEventListener('click', fetchAdminBundles);
+
+  document.getElementById('bundle-reset-btn').addEventListener('click', function() {
+    document.getElementById('bundle-form').reset();
+    document.getElementById('bundle-id').value = "";
+    document.getElementById('bundle-save-btn').textContent = 'SAVE BUNDLE';
+    this.style.display = 'none';
+  });
+  // --- FORM SUBMISSION FOR BUNDLES ---
+  document.getElementById('bundle-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    bundleMsg.style.display = 'block';
+    bundleMsg.style.color = '#333';
+    bundleMsg.textContent = 'Synchronizing configuration changes...';
+
+    var bId = document.getElementById('bundle-id').value;
+    var payload = {
+      action: bId ? 'update' : 'create',
+      id: bId || undefined,
+      name: document.getElementById('bundle-name').value,
+      price: document.getElementById('bundle-price').value,
+      volume_female: document.getElementById('bundle-vol-female').value,
+      volume_male: document.getElementById('bundle-vol-male').value,
+      active: parseInt(document.getElementById('bundle-active').value)
+    };
+
+    fetch('/api/manage-products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      bundleMsg.style.color = '#155724';
+      bundleMsg.textContent = data.message;
+      document.getElementById('bundle-reset-btn').click();
+      fetchAdminBundles();
+    })
+    .catch(err => {
+      bundleMsg.style.color = '#c0392b';
+      bundleMsg.textContent = 'Submission aborted: ' + err.message;
+    });
+  });
+
+  // --- AUTH & LOGOUT ---
+  document.addEventListener('DOMContentLoaded', function() {
+    if (sessionStorage.getItem('admin_auth') !== 'true') {
+      window.location.href = '/admin/login';
+      return;
+    }
+    document.getElementById('logout-btn').addEventListener('click', function(e) {
+      e.preventDefault();
+      sessionStorage.removeItem('admin_auth');
+      window.location.href = '/admin/login';
+    });
+
+    // --- CLEANUP DELETED ORDERS ---
+    document.getElementById('hide-deleted-btn').addEventListener('click', function() {
+      if (!confirm('Hide all current deleted orders from view?')) return;
+      localStorage.setItem('indscent_deleted_hide_cutoff', new Date().toISOString());
+      var msg = document.getElementById('cleanup-msg');
+      msg.textContent = 'Done! Deleted orders hidden from view.';
+      msg.style.display = 'block';
+      setTimeout(function() { msg.style.display = 'none'; }, 3500);
+    });
+  });
+
+  // --- CSV EXPORT IMPLEMENTATION ---
+  function triggerExport(targetName) {
+    var msg = document.getElementById('export-msg');
+    msg.style.display = 'block';
+    msg.style.color = '#333';
+    msg.textContent = 'Fetching raw records...';
+
+    fetch('/api/export-csv?target=' + targetName)
+      .then(res => res.json())
+      .then(response => {
+        if (response.error) throw new Error(response.error);
+        var data = response.data;
+        if (!data || data.length === 0) {
+          msg.textContent = 'Target table contains zero records.';
+          msg.style.color = '#c0392b';
+          return;
+        }
+
+        var headers = Object.keys(data[0]);
+        var csvContent = headers.join(',') + '\n';
+        data.forEach(function(row) {
+          var rowValues = headers.map(function(h) {
+            var value = row[h] === null ? '' : row[h];
+            if (typeof value === 'string' && value.includes(',')) {
+              return '"' + value.replace(/"/g, '""') + '"';
+            }
+            return value;
+          });
+          csvContent += rowValues.join(',') + '\n';
+        });
+
+        var blob = new Blob([csvContent], { type: 'text/csv; charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", targetName + "_backup.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        msg.textContent = 'Backup file downloaded successfully!';
+        msg.style.color = '#155724';
+      })
+      .catch(err => {
+        msg.textContent = 'Export failed: ' + err.message;
+        msg.style.color = '#c0392b';
+      });
+  }
+
+  document.getElementById('export-fragrances-btn').addEventListener('click', function() {
+    triggerExport('fragrances');
+  });
+  document.getElementById('export-products-btn').addEventListener('click', function() {
+    triggerExport('products');
+  });
+
+  // --- CSV IMPORT IMPLEMENTATION ---
+  document.getElementById('upload-btn').addEventListener('click', function() {
+    var fileInput = document.getElementById('csv-file');
+    var file = fileInput.files[0];
+    var targetTable = document.getElementById('import-target').value;
+    var msg = document.getElementById('upload-msg');
+    var preview = document.getElementById('preview-container');
+    var previewTable = document.getElementById('preview-table');
+
+    if (!file) {
+      msg.style.display = 'block';
+      msg.style.color = '#c0392b';
+      msg.textContent = 'Please select an updated CSV template file first.';
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var lines = e.target.result.split('\n').filter(l => l.trim());
+      if (lines.length < 2) {
+        msg.style.display = 'block';
+        msg.style.color = '#c0392b';
+        msg.textContent = 'The uploaded file contains no data rows.';
+        return;
+      }
+
+      var headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      if (targetTable === 'fragrances' && (!headers.includes('name') || !headers.includes('gender'))) {
+        msg.style.display = 'block';
+        msg.style.color = '#c0392b';
+        msg.textContent = 'Fragrances template requires at minimum "name" and "gender" headers.';
+        return;
+      }
+      if (targetTable === 'products' && (!headers.includes('name') || !headers.includes('price'))) {
+        msg.style.display = 'block';
+        msg.style.color = '#c0392b';
+        msg.textContent = 'Products template requires at minimum "name" and "price" headers.';
+        return;
+      }
+
+      var payloadRows = [];
+      for (var i = 1; i < lines.length; i++) {
+        var cols = lines[i].split(',');
+        var obj = {};
+        headers.forEach(function(header, idx) {
+          if (cols[idx] !== undefined) {
+            var value = cols[idx].trim();
+            if (header === 'active' || header === 'price') {
+              obj[header] = parseInt(value) || 0;
+            } else {
+              obj[header] = value;
+            }
+          }
+        });
+        payloadRows.push(obj);
+      }
+
+      var previewHtml = '<table class="admin-table"><thead><tr>';
+      headers.forEach(function(h) { previewHtml += '<th>' + h.toUpperCase() + '</th>'; });
+      previewHtml += '</tr></thead><tbody>';
+      payloadRows.slice(0, 10).forEach(function(row) {
+        previewHtml += '<tr>';
+        headers.forEach(function(h) { previewHtml += '<td>' + (row[h] !== undefined ? row[h] : '') + '</td>'; });
+        previewHtml += '</tr>';
+      });
+      if (payloadRows.length > 10) {
+        previewHtml += '<tr><td colspan="' + headers.length + '" style="color:#888; font-style:italic;">... and ' + (payloadRows.length - 10) + ' more rows staging.</td></tr>';
+      }
+      previewHtml += '</tbody></table>';
+      previewTable.innerHTML = previewHtml;
+      preview.style.display = 'block';
+      msg.style.display = 'block';
+      msg.style.color = '#333';
+      msg.textContent = 'Pushing ' + payloadRows.length + ' rows directly into Cloudflare D1 SQL...';
+
+      fetch('/api/import-csv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: targetTable, rows: payloadRows })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        msg.style.color = '#155724';
+        msg.textContent = 'Success! Live database overwritten. ' + data.count + ' records verified live.';
+      })
+      .catch(err => {
+        msg.style.color = '#c0392b';
+        msg.textContent = 'Database Write Error: ' + err.message;
+      });
+    };
+    reader.readAsText(file);
+  });
+</script>
+</BaseLayout>

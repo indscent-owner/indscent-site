@@ -1,0 +1,135 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Admin Inbox">
+  <link rel="stylesheet" href="/admin.css" slot="head" />
+
+  <div class="admin-header">
+    <div class="admin-header-left">
+      <img src="/assets/logo.jpg" alt="inDscent Logo" />
+      <div class="admin-header-title">
+        <h1>INDSCENT ADMIN</h1>
+        <p>"Your Signature Identity In Every Drop"</p>
+      </div>
+    </div>
+    <a href="/admin/login/" class="logout-btn" id="logout-btn">LOGOUT</a>
+  </div>
+
+  <div class="admin-nav">
+    <a href="/admin/inbox/" class="active">INBOX</a>
+    <a href="/admin/consolidated/">CONSOLIDATED</a>
+    <a href="/admin/archived/">ARCHIVED</a>
+    <a href="/admin/deleted/">DELETED</a>
+    <a href="/admin/maintenance/">MAINTENANCE</a>
+    <a href="/admin/bundles/">BUNDLES</a>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-box">
+      <div class="admin-box-title">
+        <span>NEW ORDERS</span>
+        <span id="order-count"></span>
+      </div>
+      <div class="admin-box-body">
+        <div id="orders-container">
+          <p class="loading-msg">Loading orders...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .badge { display:inline-block; font-size:0.7rem; font-weight:bold; padding:0.15rem 0.4rem; border-radius:3px; margin-right:0.2rem; }
+    .badge-m { background:#d0e8f8; color:#1a4a7a; }
+    .badge-f { background:#f8d7e8; color:#9b3a6b; }
+    .items-col { line-height: 1.8; }
+  </style>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (sessionStorage.getItem('admin_auth') !== 'true') {
+        window.location.href = '/admin/login/';
+        return;
+      }
+      document.getElementById('logout-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        sessionStorage.removeItem('admin_auth');
+        window.location.href = '/admin/login/';
+      });
+      loadOrders();
+    });
+
+    function gBadge(gender) {
+      if (gender === 'female') return '<span class="badge badge-f">F</span>';
+      return '<span class="badge badge-m">M</span>';
+    }
+
+    function loadOrders() {
+      fetch('/api/get-orders?status=Inbox&admin=true')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var container = document.getElementById('orders-container');
+          if (!data.orders || data.orders.length === 0) {
+            container.innerHTML = '<p class="empty-msg">No new orders.</p>';
+            document.getElementById('order-count').textContent = '0 orders';
+            return;
+          }
+
+          var grouped = {};
+          data.orders.forEach(function(row) {
+            var key = row.name + ' ' + row.surname + '||' + row.order_date;
+            if (!grouped[key]) {
+              grouped[key] = {
+                name: row.name + ' ' + row.surname,
+                contact: row.contact,
+                email: row.email,
+                date: row.order_date,
+                items: [],
+                total: 0
+              };
+            }
+            grouped[key].items.push(row);
+            if (row.fragrance_name === 'BUNDLE_TOTAL') {
+              grouped[key].total += row.price;
+            } else if (!row.bundle_id || row.bundle_id === '') {
+              grouped[key].total += row.price * row.quantity;
+            }
+          });
+
+          document.getElementById('order-count').textContent = Object.keys(grouped).length + ' orders';
+
+          container.innerHTML = '<table class="admin-table"><thead><tr>' +
+            '<th>Date</th><th>Name & Contact</th><th>Items</th><th>Total</th><th>Action</th>' +
+            '</tr></thead><tbody>' +
+            Object.values(grouped).map(function(order) {
+              var itemList = order.items
+                .filter(function(i) { return i.fragrance_name !== 'BUNDLE_TOTAL'; })
+                .map(function(i) {
+                  return gBadge(i.gender) + i.fragrance_name + ' - ' + i.product_name + ' x' + i.quantity;
+                }).join('<br>');
+              var ids = order.items.map(function(i) { return i.id; }).join(',');
+              return '<tr>' +
+                '<td>' + order.date + '</td>' +
+                '<td>' + order.name + '<br><small>' + order.contact + '</small><br><small>' + order.email + '</small></td>' +
+                '<td class="items-col">' + itemList + '</td>' +
+                '<td>R' + order.total + '</td>' +
+                '<td><button class="action-btn delete" onclick="deleteOrder(\'' + ids + '\')">Delete</button></td>' +
+              '</tr>';
+            }).join('') +
+          '</tbody></table>';
+        })
+        .catch(function() {
+          document.getElementById('orders-container').innerHTML = '<p class="empty-msg">Could not load orders.</p>';
+        });
+    }
+
+    function deleteOrder(ids) {
+      if (!confirm('Delete this order?')) return;
+      fetch('/api/update-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', ids: ids.split(',').map(Number) })
+      }).then(function() { loadOrders(); });
+    }
+  </script>
+</BaseLayout>

@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Place an Order">
+  <link rel="stylesheet" href="/client.css" slot="head" />
+  <div class="page-header">
+    <div class="header-left">
+      <a href="/home/"><img src="/assets/logo.jpg" alt="inDscent Logo" /></a>
+      <div class="header-title">
+        <h1>INDSCENT</h1>
+        <p>"Your Signature Identity In Every Drop"</p>
+        <small>indscentfragrances@gmail.com</small>
+      </div>
+    </div>
+    <a href="/assets/fragrances.pdf" target="_blank" class="btn-catalogue">PDF CATALOGUE</a>
+  </div>
+
+  <div class="bundles-banner-bar">
+    <a href="/bundles/" class="bundles-bar">✨ Check out our Bundled Specials</a>
+  </div>
+
+  <div class="section">
+    <div class="section-box">
+      <div class="section-title">1. SELECT YOUR FRAGRANCE</div>
+      <div class="section-body">
+        <div class="gender-toggle">
+          <button class="gender-btn active" id="btn-female">WOMEN'S FRAGRANCES</button>
+          <button class="gender-btn" id="btn-male">MEN'S FRAGRANCES</button>
+        </div>
+        <select id="fragrance-select">
+          <option value="">-- Choose a fragrance --</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-box">
+      <div class="section-title">2. PRODUCT OPTIONS</div>
+      <div class="section-body">
+        <table class="product-table">
+          <thead><tr><th>Product Type</th><th>Size</th><th>Price</th><th>Action</th></tr></thead>
+          <tbody id="product-tbody">
+            <tr><td colspan="4" class="empty-msg">Select a fragrance first</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="combined-cart-section">
+    <div class="combined-cart-box">
+      <div class="combined-cart-title">3. YOUR CART</div>
+      <div id="individual-cart-area"></div>
+      <div id="bundle-cart-area"></div>
+      <div class="cart-grand-total" id="grand-total" style="display:none;">Grand Total: R0</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-box">
+      <div class="section-title" id="details-title">4. YOUR DETAILS</div>
+      <div class="section-body">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="firstName" placeholder="Your first name" />
+        </div>
+        <div class="form-group">
+          <label>Surname</label>
+          <input type="text" id="surname" placeholder="Your surname" />
+        </div>
+        <div class="form-group">
+          <label>Contact Number</label>
+          <input type="tel" id="phone" placeholder="e.g. 0821234567" />
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="email" placeholder="your@email.com" />
+        </div>
+        <button class="submit-btn" id="submit-btn">PLACE YOUR ORDER</button>
+        <div id="processing-msg" style="display:none;text-align:center;padding:1rem;color:#c9a84c;font-weight:bold;letter-spacing:1px;">
+          ⏳ Processing your order, please wait...
+        </div>
+        <div class="msg success" id="msg-success">Order placed successfully!</div>
+        <div class="msg error" id="msg-error">Something went wrong. Please try again.</div>
+        <a href="/recent/" class="recent-btn">See Recent Orders</a>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline src="/client.js"></script>
+</BaseLayout>

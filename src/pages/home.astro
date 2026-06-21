@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent Fragrances - Home">
+  <link rel="stylesheet" href="/home.css" slot="head" />
+
+  <!-- Clean icon-only floating action download button -->
+  <button class="install-btn" id="install-btn" title="Install App">
+    <svg viewBox="0 0 24 24" xmlns="http://w3.org">
+      <path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 4h14v-2H5v2z"/>
+    </svg>
+  </button>
+
+  <div class="home">
+    <img src="/assets/logo.jpg" alt="inDscent Logo" class="logo" />
+    <p class="tagline">Indulge in the art of fragrance</p>
+    <p class="subtitle">Your Signature Identity In Every Drop</p>
+    <div class="buttons">
+      <a href="/client/" class="btn btn-primary">Place an Order</a>
+      <a href="/gallery/" class="btn btn-secondary">View Our Collection</a>
+      <a href="/assets/fragrances.pdf" target="_blank" class="btn btn-secondary">Download Fragrance List</a>
+    </div>
+  </div>
+
+  <script is:inline>
+    var deferredPrompt;
+    var instBtn = document.getElementById('install-btn');
+    if (instBtn) instBtn.style.display = 'flex';
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    if (instBtn) {
+      instBtn.addEventListener('click', function() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function() {
+            deferredPrompt = null;
+            instBtn.style.display = 'none';
+          });
+        } else {
+          alert('To install: tap the Share button in your browser then select "Add to Home Screen"');
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', function() {
+      if (instBtn) instBtn.style.display = 'none';
+    });
+  </script>
+</BaseLayout>

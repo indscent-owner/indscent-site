@@ -1,0 +1,185 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Recent Orders">
+  <link rel="stylesheet" href="/recent.css" slot="head" />
+  <div class="page-header">
+    <div class="header-left">
+      <a href="/home/"><img src="/assets/logo.jpg" alt="inDscent Logo" /></a>
+      <div class="header-title">
+        <h1>INDSCENT</h1>
+        <p>"Your Signature Identity In Every Drop"</p>
+        <small>indscentfragrances@gmail.com</small>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-box">
+      <div class="section-title">YOUR RECENT ORDERS</div>
+      <div class="section-body">
+        <div id="orders-container">
+          <p class="loading-msg">Loading your orders...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <a href="/client" class="back-btn">Back to Orders page</a>
+  </div>
+  <script is:inline>
+    var volumeMap = {
+      'Perfume Pen': '10ml', 'Hand Lotion': '50ml', 'Standard Perfume': '50ml',
+      'Mini Perfume': '30ml', 'Shower Gel': '250ml', 'Body Lotion': '250ml',
+      'Body Powder': '250ml', 'Roll-On': '80ml', 'Hand Wash': '250ml',
+      'Liquid Soap': '250ml', 'Roll-On Deodorant': '80ml', 'Perfume Sample': '5ml'
+    };
+
+    function getVolume(productName, gender) {
+      if (productName === 'Standard Perfume' && gender === 'male') return '60ml';
+      return volumeMap[productName] || '';
+    }
+
+    function gBadge(gender) {
+      if (gender === 'female') return '<span class="recent-badge badge-f">F</span>';
+      return '<span class="recent-badge badge-m">M</span>';
+    }
+
+    function statusLabel(status, delivered) {
+      var s = (status || '').toLowerCase();
+      if (s === 'inbox') return '<span class="order-status-pill pill-yellow">ON ORDER</span>';
+      if (delivered === 1) return '<span class="order-status-pill pill-green">COMPLETE</span>';
+      return '<span class="order-status-pill pill-orange">PROCESSED</span>';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var device_id = localStorage.getItem('indscent_device_id');
+      var container = document.getElementById('orders-container');
+      if (!device_id) {
+        container.innerHTML = '<p class="empty-msg">No orders found on this device.</p>';
+        return;
+      }
+
+      fetch('/api/get-orders?device_id=' + device_id)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (!data.orders || data.orders.length === 0) {
+            container.innerHTML = '<p class="empty-msg">No orders found on this device.</p>';
+            return;
+          }
+
+          var grouped = {};
+          data.orders.forEach(function(row) {
+            var key = row.order_date;
+            if (!grouped[key]) {
+              grouped[key] = {
+                name: row.name + ' ' + row.surname,
+                date: row.order_date,
+                status: row.status,
+                delivered: row.delivered || 0,
+                items: []
+              };
+            }
+            grouped[key].items.push(row);
+            if (row.delivered) grouped[key].delivered = row.delivered;
+          });
+
+          container.innerHTML = Object.values(grouped).map(function(order) {
+            var bundleGroups = {};
+            var individualItems = [];
+
+            order.items.forEach(function(i) {
+              if (i.bundle_id && i.bundle_id !== '' && i.bundle_id !== null) {
+                if (!bundleGroups[i.bundle_id]) {
+                  bundleGroups[i.bundle_id] = { items: [], price: 0, bundle_name: '' };
+                }
+                if (i.fragrance_name === 'BUNDLE_TOTAL') {
+                  bundleGroups[i.bundle_id].price = i.price;
+                  bundleGroups[i.bundle_id].bundle_name = i.product_name;
+                } else {
+                  bundleGroups[i.bundle_id].items.push(i);
+                }
+              } else {
+                if (i.fragrance_name !== 'BUNDLE_TOTAL') {
+                  individualItems.push(i);
+                }
+              }
+            });
+
+            var indTotal = 0;
+            var bundleTotal = 0;
+            Object.values(bundleGroups).forEach(function(b) { bundleTotal += b.price; });
+            individualItems.forEach(function(i) { indTotal += i.price * i.quantity; });
+            var grandTotal = indTotal + bundleTotal;
+
+            var indSection = '';
+            if (individualItems.length > 0) {
+              var indRows = individualItems.map(function(i) {
+                var vol = i.volume || getVolume(i.product_name, i.gender);
+                return '<tr>' +
+                  '<td>' + gBadge(i.gender) + ' <strong>' + i.fragrance_name + '</strong><br>' +
+                    '<span style="font-size:0.85rem;color:#555;">' + i.product_name + (vol ? ' (' + vol + ')' : '') + '</span>' +
+                  '</td>' +
+                  '<td>' + i.quantity + '</td>' +
+                  '<td>R' + (i.price * i.quantity) + '</td>' +
+                '</tr>';
+              }).join('');
+
+              indSection =
+                '<div class="order-sub-title">INDIVIDUAL ITEMS</div>' +
+                '<table class="order-items-table">' +
+                  '<thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
+                  '<tbody>' + indRows + '</tbody>' +
+                '</table>' +
+                '<div class="order-subtotal">Item Total: R' + indTotal + '</div>';
+            }
+
+            var bundleSection = '';
+            if (Object.keys(bundleGroups).length > 0) {
+              var bundleContent = Object.entries(bundleGroups).map(function(entry) {
+                var bundle = entry[1];
+                var itemRows = bundle.items.map(function(i) {
+                  var vol = getVolume(i.product_name, i.gender);
+                  return '<tr>' +
+                    '<td>' + gBadge(i.gender) + ' <strong>' + i.fragrance_name + '</strong><br>' +
+                      '<span style="font-size:0.85rem;color:#555;">' + i.product_name + (vol ? ' (' + vol + ')' : '') + '</span>' +
+                    '</td>' +
+                    '<td>1</td>' +
+                    '<td><span class="bundled-label">Bundled</span></td>' +
+                  '</tr>';
+                }).join('');
+
+                return '<div class="bundle-group-header">' +
+                    '<span class="bundle-group-name">' + bundle.bundle_name + '</span>' +
+                    '<span class="bundle-group-price">R' + bundle.price + '</span>' +
+                  '</div>' +
+                  '<table class="order-items-table">' +
+                    '<thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
+                    '<tbody>' + itemRows + '</tbody>' +
+                  '</table>';
+              }).join('');
+
+              bundleSection =
+                '<div class="order-sub-title">BUNDLE ITEMS</div>' +
+                bundleContent +
+                '<div class="order-subtotal">Bundle Total: R' + bundleTotal + '</div>';
+            }
+
+            return '<div class="order-card">' +
+              '<div class="order-header">' +
+                '<span class="order-date">' + order.date + '</span>' +
+                statusLabel(order.status, order.delivered) +
+              '</div>' +
+              '<div class="order-name">' + order.name + '</div>' +
+              indSection +
+              bundleSection +
+              '<div class="order-grand-total">Grand Total: R' + grandTotal + '</div>' +
+            '</div>';
+          }).join('');
+        })
+        .catch(function(err) {
+          console.error(err);
+          container.innerHTML = '<p class="empty-msg">Could not load orders. Please try again.</p>';
+        });
+    });
+  </script>
+</BaseLayout>

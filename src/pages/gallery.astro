@@ -1,0 +1,200 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Our Collection">
+  <link rel="stylesheet" href="/recent.css" slot="head" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1a1a; font-family: Arial, sans-serif; }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .gallery-item {
+      background: #2a2a2a;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .gallery-item:hover { transform: scale(1.03); }
+    .gallery-item img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: contain;
+      background: white;
+      padding: 0.5rem;
+    }
+    .gallery-item-info {
+      padding: 0.6rem;
+      text-align: center;
+    }
+    .gallery-item-name {
+      color: white;
+      font-size: 0.8rem;
+      margin-bottom: 0.3rem;
+    }
+    .gallery-item-price {
+      color: #c9a84c;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .lightbox.active { display: flex; }
+    .lightbox img {
+      max-width: 80%;
+      max-height: 60vh;
+      object-fit: contain;
+      background: white;
+      padding: 1rem;
+      border-radius: 6px;
+    }
+    .lightbox-info { text-align: center; margin-top: 1rem; }
+    .lightbox-info h2 { color: white; font-size: 1.1rem; margin-bottom: 0.3rem; }
+    .lightbox-info p { color: #c9a84c; font-weight: bold; font-size: 1rem; }
+    .lightbox-close {
+      position: absolute;
+      top: 1rem; right: 1.5rem;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+    }
+    .lightbox-close:hover { color: #c9a84c; }
+  </style>
+
+  <div class="page-header">
+    <div class="header-left">
+      <a href="/home/"><img src="/assets/logo.jpg" alt="inDscent Logo" /></a>
+      <div class="header-title">
+        <h1>INDSCENT</h1>
+        <p>PRODUCT COLLECTION</p>
+        <small>indscentfragrances@gmail.com</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="gallery-grid">
+    <div class="gallery-item" onclick="openLightbox('Standard_Female_50ml.jpg', 'Female Standard Perfume - 50ml', 'R150')">
+      <img src="/assets/Standard_Female_50ml.jpg" alt="Female Standard Perfume" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Female Standard Perfume - 50ml</div>
+        <div class="gallery-item-price">R150</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Standard_Male_60ml.jpg', 'Male Standard Perfume - 60ml', 'R150')">
+      <img src="/assets/Standard_Male_60ml.jpg" alt="Male Standard Perfume" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Male Standard Perfume - 60ml</div>
+        <div class="gallery-item-price">R150</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Mini_Female_30ml.jpg', 'Female Mini Perfume - 30ml', 'R100')">
+      <img src="/assets/Mini_Female_30ml.jpg" alt="Female Mini Perfume" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Female Mini Perfume - 30ml</div>
+        <div class="gallery-item-price">R100</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Mini_male_30ml.jpg', 'Male Mini Perfume - 30ml', 'R100')">
+      <img src="/assets/Mini_male_30ml.jpg" alt="Male Mini Perfume" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Male Mini Perfume - 30ml</div>
+        <div class="gallery-item-price">R100</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Perfume_Pen_10ml.jpg', 'Perfume Pen - 10ml', 'R55')">
+      <img src="/assets/Perfume_Pen_10ml.jpg" alt="Perfume Pen" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Perfume Pen - 10ml</div>
+        <div class="gallery-item-price">R55</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Shower_Gel_250ml.jpg', 'Shower Gel - 250ml', 'R50')">
+      <img src="/assets/Shower_Gel_250ml.jpg" alt="Shower Gel" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Shower Gel - 250ml</div>
+        <div class="gallery-item-price">R50</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Body_Lotion_250ml.jpg', 'Body Lotion - 250ml', 'R65')">
+      <img src="/assets/Body_Lotion_250ml.jpg" alt="Body Lotion" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Body Lotion - 250ml</div>
+        <div class="gallery-item-price">R65</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Body_Powder_250ml.jpg', 'Body Powder - 250ml', 'R50')">
+      <img src="/assets/Body_Powder_250ml.jpg" alt="Body Powder" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Body Powder - 250ml</div>
+        <div class="gallery-item-price">R50</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Hand_Lotion_50ml.jpg', 'Hand Lotion - 50ml', 'R25')">
+      <img src="/assets/Hand_Lotion_50ml.jpg" alt="Hand Lotion" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Hand Lotion - 50ml</div>
+        <div class="gallery-item-price">R25</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Liquid_Soap_250ml.jpg', 'Liquid Soap - 250ml', 'R45')">
+      <img src="/assets/Liquid_Soap_250ml.jpg" alt="Liquid Soap" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Liquid Soap - 250ml</div>
+        <div class="gallery-item-price">R45</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Roll-On_Deodorant_80ml.jpg', 'Roll-On Deodorant - 80ml', 'R35')">
+      <img src="/assets/Roll-On_Deodorant_80ml.jpg" alt="Roll-On Deodorant" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Roll-On Deodorant - 80ml</div>
+        <div class="gallery-item-price">R35</div>
+      </div>
+    </div>
+    <div class="gallery-item" onclick="openLightbox('Perfume_Sample_5ml.jpg', 'Perfume Sample - 5ml', 'R20')">
+      <img src="/assets/Perfume_Sample_5ml.jpg" alt="Perfume Sample" />
+      <div class="gallery-item-info">
+        <div class="gallery-item-name">Perfume Sample - 5ml</div>
+        <div class="gallery-item-price">R20</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close" onclick="closeLightbox()">×</span>
+    <img id="lightbox-img" src="" alt="" />
+    <div class="lightbox-info">
+      <h2 id="lightbox-name"></h2>
+      <p id="lightbox-price"></p>
+    </div>
+  </div>
+
+  <script is:inline>
+    function openLightbox(img, name, price) {
+      document.getElementById('lightbox-img').src = '/assets/' + img;
+      document.getElementById('lightbox-name').textContent = name;
+      document.getElementById('lightbox-price').textContent = price;
+      document.getElementById('lightbox').classList.add('active');
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeLightbox();
+    });
+  </script>
+</BaseLayout>

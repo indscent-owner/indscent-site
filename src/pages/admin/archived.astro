@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Archived Orders">
+  <link rel="stylesheet" href="/admin.css" slot="head" />
+  <div class="admin-header">
+    <div class="admin-header-left">
+      <img src="/assets/logo.jpg" alt="inDscent Logo" />
+      <div class="admin-header-title">
+        <h1>INDSCENT ADMIN</h1>
+        <p>"Your Signature Identity In Every Drop"</p>
+      </div>
+    </div>
+    <a href="/admin/login/" class="logout-btn" id="logout-btn">LOGOUT</a>
+  </div>
+  <div class="admin-nav">
+    <a href="/admin/inbox/">INBOX</a>
+    <a href="/admin/consolidated/">CONSOLIDATED</a>
+    <a href="/admin/archived/" class="active">ARCHIVED</a>
+    <a href="/admin/deleted/">DELETED</a>
+    <a href="/admin/maintenance/">MAINTENANCE</a>
+  </div>
+  <div class="admin-section">
+    <div class="admin-box">
+      <div class="admin-box-title">
+        <span>ARCHIVED ORDERS</span>
+        <span id="order-count"></span>
+      </div>
+      <div class="admin-box-body">
+        <div id="orders-container">
+          <p class="loading-msg">Loading archived orders...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script is:inline src="/archived.js"></script>
+</BaseLayout>
