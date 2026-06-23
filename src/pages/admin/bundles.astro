@@ -3,39 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 <BaseLayout title="inDscent - Bundle Management">
   <link rel="stylesheet" href="/admin.css" slot="head" />
-  <style slot="head">
-    .bundle-admin-card { border: 1px solid #ddd; border-radius: 4px; padding: 1rem; margin-bottom: 1rem; background: #f9f9f9; }
-    .bundle-admin-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
-    .bundle-admin-id { background:#1a1a2e; color:#c9a84c; font-family:monospace; font-size:0.8rem; padding:0.2rem 0.5rem; border-radius:3px; }
-    .bundle-admin-name { font-weight:bold; font-size:1rem; color:#111; }
-    .bundle-admin-price { font-weight:bold; color:#c9a84c; }
-    .bundle-admin-items { font-size:0.85rem; color:#555; margin:0.5rem 0; }
-    .bundle-admin-actions { display:flex; gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap; align-items:center; }
-    .toggle-btn { border:none; padding:0.3rem 0.8rem; font-size:0.8rem; font-weight:bold; cursor:pointer; border-radius:3px; }
-    .toggle-btn.active { background:#27ae60; color:white; }
-    .toggle-btn.inactive { background:#c0392b; color:white; }
-    .edit-inline { display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid #ddd; }
-    .edit-inline.open { display:block; }
-    .edit-row { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-bottom:0.5rem; }
-    .edit-row input { padding:0.4rem; border:1px solid #ccc; font-size:0.9rem; flex:1; min-width:120px; }
-    .save-btn { background:#1a1a2e; color:#c9a84c; border:none; padding:0.4rem 1rem; font-weight:bold; cursor:pointer; font-size:0.85rem; }
-    .save-btn:hover { background:#c9a84c; color:#1a1a2e; }
-    .create-form { background:#f0f4f8; border:1px solid #ddd; border-radius:4px; padding:1rem; margin-bottom:1.5rem; }
-    .create-form h3 { color:#1a1a2e; margin-bottom:1rem; font-size:0.95rem; letter-spacing:1px; }
-    .form-row { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem; }
-    .form-row input, .form-row select { flex:1; min-width:140px; padding:0.5rem; border:1px solid #ccc; font-size:0.9rem; }
-    .items-builder { margin-bottom:0.8rem; }
-    .item-row { display:flex; gap:0.5rem; align-items:center; margin-bottom:0.4rem; }
-    .item-row select { flex:1; padding:0.4rem; border:1px solid #ccc; font-size:0.85rem; }
-    .remove-item-btn { background:#c0392b; color:white; border:none; padding:0.3rem 0.6rem; cursor:pointer; font-size:0.8rem; border-radius:3px; }
-    .add-item-btn { background:#2980b9; color:white; border:none; padding:0.4rem 0.8rem; cursor:pointer; font-size:0.85rem; border-radius:3px; margin-bottom:0.8rem; }
-    .create-btn { background:#27ae60; color:white; border:none; padding:0.6rem 1.5rem; font-weight:bold; cursor:pointer; font-size:0.9rem; letter-spacing:1px; }
-    .create-btn:hover { background:#1e8449; }
-    .msg-box { padding:0.6rem 1rem; border-radius:3px; margin-bottom:1rem; font-weight:bold; display:none; }
-    .msg-success { background:#d4edda; color:#155724; }
-    .msg-error { background:#f8d7da; color:#721c24; }
-    .id-select { padding:0.5rem; border:1px solid #ccc; font-size:0.9rem; flex:1; min-width:140px; }
-  </style>
+  <link rel="stylesheet" href="/admin-bundles.css?v=2" slot="head" />
 
   <div class="admin-header">
     <div class="admin-header-left">
@@ -55,6 +23,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <a href="/admin/deleted/">DELETED</a>
     <a href="/admin/maintenance/">MAINTENANCE</a>
     <a href="/admin/bundles/" class="active">BUNDLES</a>
+    <a href="/admin/suggestions/">SUGGESTIONS</a>
   </div>
 
   <div class="admin-section">
@@ -62,31 +31,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="admin-box" style="margin-bottom:2rem;">
       <div class="admin-box-title">CREATE NEW BUNDLE</div>
       <div class="admin-box-body">
-        <div class="msg-box msg-success" id="create-success"></div>
-        <div class="msg-box msg-error" id="create-error"></div>
-        <div class="create-form">
-          <div class="form-row">
-            <div style="flex:1;min-width:140px;">
-              <label style="display:block;font-size:0.8rem;font-weight:bold;margin-bottom:0.3rem;">Bundle ID</label>
-              <select class="id-select" id="new-bundle-id">
-                <option value="">Loading...</option>
-              </select>
+        <div id="create-success" style="display:none;padding:0.6rem 1rem;background:#d4edda;color:#155724;font-weight:bold;border-radius:3px;margin-bottom:1rem;"></div>
+        <div id="create-error" style="display:none;padding:0.6rem 1rem;background:#f8d7da;color:#721c24;font-weight:bold;border-radius:3px;margin-bottom:1rem;"></div>
+
+        <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:1rem;">
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+            <div style="flex:1;min-width:130px;">
+              <label style="display:block;font-size:0.8rem;font-weight:bold;margin-bottom:0.3rem;color:#1a1a2e;">Bundle ID</label>
+              <select id="new-bundle-id" style="width:100%;padding:0.5rem;border:1px solid #ccc;font-size:0.9rem;background:white;"></select>
             </div>
-            <div style="flex:1;min-width:140px;">
-              <label style="display:block;font-size:0.8rem;font-weight:bold;margin-bottom:0.3rem;">Bundle Name</label>
-              <input type="text" id="new-bundle-name" placeholder="e.g. Bundle_17" />
+            <div style="flex:2;min-width:160px;">
+              <label style="display:block;font-size:0.8rem;font-weight:bold;margin-bottom:0.3rem;color:#1a1a2e;">Bundle Name</label>
+              <input type="text" id="new-bundle-name" placeholder="e.g. Bundle_17" style="width:100%;padding:0.5rem;border:1px solid #ccc;font-size:0.9rem;" />
             </div>
-            <div style="flex:1;min-width:140px;">
-              <label style="display:block;font-size:0.8rem;font-weight:bold;margin-bottom:0.3rem;">Price (R)</label>
-              <input type="number" id="new-bundle-price" placeholder="e.g. 150" />
+            <div style="flex:1;min-width:100px;">
+              <label style="display:block;font-size:0.8rem;font-weight:bold;margin-bottom:0.3rem;color:#1a1a2e;">Price (R)</label>
+              <input type="number" id="new-bundle-price" placeholder="e.g. 150" style="width:100%;padding:0.5rem;border:1px solid #ccc;font-size:0.9rem;" />
             </div>
           </div>
-          <div class="items-builder">
-            <label style="display:block;font-size:0.8rem;font-weight:bold;margin-bottom:0.5rem;">Bundle Items</label>
+
+          <div style="margin-bottom:0.8rem;">
+            <label style="display:block;font-size:0.8rem;font-weight:bold;margin-bottom:0.5rem;color:#1a1a2e;">Bundle Items</label>
             <div id="items-container"></div>
-            <button class="add-item-btn" onclick="addItemRow()">+ Add Product Line</button>
+            <button onclick="addItemRow()" style="background:#2980b9;color:white;border:none;padding:0.4rem 0.9rem;cursor:pointer;font-size:0.85rem;border-radius:3px;margin-top:0.3rem;">+ Add Product Line</button>
           </div>
-          <button class="create-btn" onclick="createBundle()">CREATE BUNDLE</button>
+
+          <button onclick="createBundle()" style="background:#27ae60;color:white;border:none;padding:0.7rem 2rem;font-weight:bold;cursor:pointer;font-size:0.9rem;letter-spacing:1px;">CREATE BUNDLE</button>
         </div>
       </div>
     </div>
@@ -100,256 +70,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div id="bundles-list">
           <p class="loading-msg">Loading bundles...</p>
         </div>
+        <div class="deploy-controls">
+          <button id="deploy-changes-btn" class="deploy-button" type="button">Deploy Changes</button>
+          <span id="deploy-status" class="deploy-status">No deployment in progress.</span>
+        </div>
       </div>
     </div>
 
   </div>
 
-  <script is:inline>
-    var allProducts = [];
-    var existingIds = [];
-
-    var PRODUCT_TYPES = [
-      'Standard Perfume', 'Mini Perfume', 'Perfume Pen', 'Shower Gel',
-      'Body Lotion', 'Body Powder', 'Hand Lotion', 'Liquid Soap',
-      'Roll-On Deodorant', 'Hand Wash', 'Perfume Sample'
-    ];
-
-    document.addEventListener('DOMContentLoaded', function() {
-      if (sessionStorage.getItem('admin_auth') !== 'true') {
-        window.location.href = '/admin/login/';
-        return;
-      }
-      document.getElementById('logout-btn').addEventListener('click', function(e) {
-        e.preventDefault();
-        sessionStorage.removeItem('admin_auth');
-        window.location.href = '/admin/login/';
-      });
-
-      loadBundles();
-      addItemRow();
-    });
-
-    function generateIdOptions(usedIds) {
-      var select = document.getElementById('new-bundle-id');
-      select.innerHTML = '';
-      for (var i = 1; i <= 99; i++) {
-        var id = 'B' + (i < 10 ? '0' + i : i);
-        if (!usedIds.includes(id)) {
-          var opt = document.createElement('option');
-          opt.value = id;
-          opt.textContent = id;
-          select.appendChild(opt);
-        }
-      }
-      // Auto-set bundle name when ID changes
-      select.addEventListener('change', function() {
-        var num = this.value.replace('B', '').replace(/^0/, '');
-        document.getElementById('new-bundle-name').value = 'Bundle_' + (parseInt(num) < 10 ? num.replace(/^0/, '') : num);
-      });
-      // Trigger once
-      if (select.options.length > 0) {
-        select.dispatchEvent(new Event('change'));
-      }
-    }
-
-    function addItemRow() {
-      var container = document.getElementById('items-container');
-      var row = document.createElement('div');
-      row.className = 'item-row';
-      row.innerHTML = '<select>' +
-        PRODUCT_TYPES.map(function(p) {
-          return '<option value="' + p + '">' + p + '</option>';
-        }).join('') +
-        '</select>' +
-        '<button class="remove-item-btn" onclick="this.parentElement.remove()">Remove</button>';
-      container.appendChild(row);
-    }
-
-    async function createBundle() {
-      var bundleId = document.getElementById('new-bundle-id').value;
-      var bundleName = document.getElementById('new-bundle-name').value.trim();
-      var price = document.getElementById('new-bundle-price').value;
-      var successMsg = document.getElementById('create-success');
-      var errorMsg = document.getElementById('create-error');
-      successMsg.style.display = 'none';
-      errorMsg.style.display = 'none';
-
-      if (!bundleId || !bundleName || !price) {
-        errorMsg.textContent = 'Please fill in all fields.';
-        errorMsg.style.display = 'block';
-        return;
-      }
-
-      var itemRows = document.querySelectorAll('#items-container .item-row');
-      if (itemRows.length === 0) {
-        errorMsg.textContent = 'Please add at least one product line.';
-        errorMsg.style.display = 'block';
-        return;
-      }
-
-      var items = Array.from(itemRows).map(function(row) {
-        return { product_type: row.querySelector('select').value };
-      });
-
-      try {
-        var res = await fetch('/api/manage-bundles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'create',
-            bundle_id: bundleId,
-            bundle_name: bundleName,
-            price: parseInt(price),
-            items: items
-          })
-        });
-        var data = await res.json();
-        if (data.success) {
-          successMsg.textContent = data.message;
-          successMsg.style.display = 'block';
-          document.getElementById('new-bundle-price').value = '';
-          document.getElementById('items-container').innerHTML = '';
-          addItemRow();
-          loadBundles();
-        } else {
-          errorMsg.textContent = data.error || 'Something went wrong.';
-          errorMsg.style.display = 'block';
-        }
-      } catch(e) {
-        errorMsg.textContent = 'Request failed: ' + e.message;
-        errorMsg.style.display = 'block';
-      }
-    }
-
-    async function loadBundles() {
-      try {
-        var res = await fetch('/api/get-bundles?all=true');
-        var bundles = await res.json();
-        existingIds = bundles.map(function(b) { return b.bundle_id; });
-        generateIdOptions(existingIds);
-        renderBundles(bundles);
-      } catch(e) {
-        document.getElementById('bundles-list').innerHTML = '<p class="empty-msg">Could not load bundles.</p>';
-      }
-    }
-
-    function renderBundles(bundles) {
-      var container = document.getElementById('bundles-list');
-      document.getElementById('bundle-count').textContent = bundles.length + ' bundles';
-
-      if (!bundles.length) {
-        container.innerHTML = '<p class="empty-msg">No bundles found.</p>';
-        return;
-      }
-
-      container.innerHTML = bundles.map(function(bundle) {
-        var itemList = bundle.items.map(function(i) { return i.product_type; }).join(', ');
-        var isActive = bundle.active === 1;
-
-        return '<div class="bundle-admin-card" id="bcard-' + bundle.bundle_id + '">' +
-          '<div class="bundle-admin-header">' +
-            '<div style="display:flex;align-items:center;gap:8px;">' +
-              '<span class="bundle-admin-id">' + bundle.bundle_id + '</span>' +
-              '<span class="bundle-admin-name">' + bundle.bundle_name + '</span>' +
-            '</div>' +
-            '<span class="bundle-admin-price">R' + bundle.price + '</span>' +
-          '</div>' +
-          '<div class="bundle-admin-items">' + itemList + '</div>' +
-          '<div class="bundle-admin-actions">' +
-            '<button class="toggle-btn ' + (isActive ? 'active' : 'inactive') + '" onclick="toggleBundle(\'' + bundle.bundle_id + '\',' + (isActive ? 0 : 1) + ',this)">' +
-              (isActive ? 'Active' : 'Inactive') +
-            '</button>' +
-            '<button class="save-btn" onclick="toggleEdit(\'' + bundle.bundle_id + '\')">Edit Name/Price</button>' +
-          '</div>' +
-          '<div class="edit-inline" id="edit-' + bundle.bundle_id + '">' +
-            '<div class="edit-row">' +
-              '<input type="text" id="ename-' + bundle.bundle_id + '" value="' + bundle.bundle_name + '" placeholder="Bundle Name" />' +
-              '<input type="number" id="eprice-' + bundle.bundle_id + '" value="' + bundle.price + '" placeholder="Price" />' +
-              '<button class="save-btn" onclick="saveBundle(\'' + bundle.bundle_id + '\')">Save</button>' +
-            '</div>' +
-            '<div class="msg-box msg-success" id="emsg-' + bundle.bundle_id + '"></div>' +
-          '</div>' +
-        '</div>';
-      }).join('');
-    }
-
-    function toggleEdit(bundleId) {
-      var el = document.getElementById('edit-' + bundleId);
-      el.classList.toggle('open');
-    }
-
-    async function saveBundle(bundleId) {
-      var name = document.getElementById('ename-' + bundleId).value.trim();
-      var price = document.getElementById('eprice-' + bundleId).value;
-      var msgEl = document.getElementById('emsg-' + bundleId);
-
-      if (!name || !price) {
-        msgEl.textContent = 'Name and price are required.';
-        msgEl.className = 'msg-box msg-error';
-        msgEl.style.display = 'block';
-        return;
-      }
-
-      try {
-        var res = await fetch('/api/manage-bundles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update',
-            bundle_id: bundleId,
-            bundle_name: name,
-            price: parseInt(price)
-          })
-        });
-        var data = await res.json();
-        if (data.success) {
-          msgEl.textContent = data.message;
-          msgEl.className = 'msg-box msg-success';
-          msgEl.style.display = 'block';
-          setTimeout(function() {
-            msgEl.style.display = 'none';
-            document.getElementById('edit-' + bundleId).classList.remove('open');
-            loadBundles();
-          }, 1500);
-        } else {
-          msgEl.textContent = data.error || 'Update failed.';
-          msgEl.className = 'msg-box msg-error';
-          msgEl.style.display = 'block';
-        }
-      } catch(e) {
-        msgEl.textContent = 'Request failed.';
-        msgEl.className = 'msg-box msg-error';
-        msgEl.style.display = 'block';
-      }
-    }
-
-    async function toggleBundle(bundleId, newActive, btn) {
-      try {
-        var res = await fetch('/api/manage-bundles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'toggle',
-            bundle_id: bundleId,
-            active: newActive === 1
-          })
-        });
-        var data = await res.json();
-        if (data.success) {
-          if (newActive === 1) {
-            btn.textContent = 'Active';
-            btn.className = 'toggle-btn active';
-            btn.setAttribute('onclick', 'toggleBundle(\'' + bundleId + '\',0,this)');
-          } else {
-            btn.textContent = 'Inactive';
-            btn.className = 'toggle-btn inactive';
-            btn.setAttribute('onclick', 'toggleBundle(\'' + bundleId + '\',1,this)');
-          }
-        }
-      } catch(e) {
-        alert('Toggle failed.');
-      }
-    }
-  </script>
+  <script is:inline src="/admin-bundles-v2.js?v=2"></script>
 </BaseLayout>

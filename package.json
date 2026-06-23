@@ -9,9 +9,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "deploy:production": "npx wrangler pages deploy dist --project-name=indscent --branch=production --commit-dirty=true",
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^4.16.0"
+    "astro": "^6.4.8"
   }
 }

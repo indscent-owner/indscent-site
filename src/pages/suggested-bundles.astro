@@ -1,0 +1,195 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Suggested Bundles">
+  <style>
+    .section { max-width: 780px; margin: 1.5rem auto; padding: 0 1rem; }
+    .section-box { background: white; border-radius: 4px; overflow: hidden; }
+    .section-title { background: #111111; color: #c9a84c; font-weight: bold; font-size: 0.95rem; letter-spacing: 1px; padding: 0.7rem 1rem; }
+    .section-body { padding: 1rem; }
+    .intro-text { margin-bottom: 1rem; color: #333; font-size: 0.95rem; line-height: 1.5; }
+    .pill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-bottom: 1.2rem; }
+    .product-pill { border: 1px solid #ccc; padding: 0.9rem 1rem; border-radius: 999px; background: #f1f1f1; color: #333; cursor: pointer; transition: all 0.2s ease; text-align: center; font-weight: 700; min-height: 56px; display: inline-flex; align-items: center; justify-content: center; }
+    .product-pill.selected { background: #d4f7d2; border-color: #7dc574; color: #1d4b27; }
+    .selected-box { border: 1px solid #ddd; border-radius: 6px; background: #fafafa; padding: 1rem; margin-bottom: 1rem; }
+    .selected-title { font-weight: bold; margin-bottom: 0.8rem; color: #111; }
+    .selected-items { display: flex; flex-wrap: wrap; gap: 0.6rem; min-height: 42px; }
+    .selected-chip { padding: 0.45rem 0.85rem; border-radius: 999px; background: #e1f5e0; color: #16401e; font-size: 0.9rem; }
+    .content-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1rem; }
+    .content-grid .right-panel { display: flex; flex-direction: column; gap: 1rem; }
+    .content-grid .comment-panel { background: #fbfbfb; border: 1px solid #ddd; border-radius: 6px; padding: 1rem; }
+    .content-grid .comment-panel textarea { min-height: 150px; }
+    .content-grid .action-row { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+    .content-grid .side-note { font-size: 0.92rem; color: #444; line-height: 1.5; }
+    @media (max-width: 900px) {
+      .content-grid { grid-template-columns: 1fr; }
+    }
+    .empty-msg { color: #777; font-style: italic; }
+    .comment-row label { display: block; color: #111; font-weight: bold; margin-bottom: 0.5rem; }
+    .comment-row textarea { width: 100%; min-height: 100px; padding: 0.85rem; border-radius: 6px; border: 1px solid #ccc; resize: vertical; font-family: inherit; font-size: 0.95rem; color: #111; }
+    .submit-btn { display: inline-flex; align-items: center; gap: 0.5rem; background: #1a1a2e; color: #c9a84c; border: none; padding: 0.9rem 1.4rem; font-size: 0.95rem; font-weight: bold; border-radius: 4px; cursor: pointer; transition: opacity 0.2s ease; }
+    .submit-btn:disabled { opacity: 0.5; cursor: default; }
+    .submit-icon { font-size: 1.1rem; }
+    .suggestion-message { margin-top: 1rem; color: #155724; font-weight: bold; }
+    .back-btn { display: block; width: 100%; padding: 0.9rem; background: #333; color: white; border: 1.5px solid white; font-size: 0.95rem; font-weight: bold; cursor: pointer; letter-spacing: 1px; text-align: center; text-decoration: none; margin-top: 1rem; }
+    .back-btn:hover { background: #555; }
+    .loading-msg { color: #888; text-align: center; padding: 1rem 0; }
+  </style>
+
+  <div class="section">
+    <div class="section-box">
+      <div class="section-title">Suggested Bundles</div>
+      <div class="section-body">
+        <p class="intro-text">Choose 2 or more of the Products and submit your request.</p>
+
+        <div id="product-pills" class="pill-grid">
+          <p class="loading-msg">Loading products...</p>
+        </div>
+
+        <div class="content-grid">
+          <div>
+            <div class="selected-box">
+              <div class="selected-title">Selected Bundle</div>
+              <div id="selected-items" class="selected-items">
+                <span class="empty-msg">Pick products to build your bundle.</span>
+              </div>
+            </div>
+          </div>
+          <div class="right-panel">
+            <div class="comment-panel">
+              <label for="suggestion-comment">Comment</label>
+              <textarea id="suggestion-comment" placeholder="Tell us what you're looking for..."></textarea>
+            </div>
+            <div class="action-row">
+              <button id="submit-suggestion" class="submit-btn" disabled>
+                <span class="submit-icon">📤</span>
+                Submit Suggestion
+              </button>
+              <button id="clear-selection" class="submit-btn" style="background:#777; color:white;">
+                <span class="submit-icon">♻️</span>
+                Clear Selection
+              </button>
+            </div>
+            <div class="side-note">Your selection will stay visible until you clear it. Select at least 2 products to enable submission.</div>
+            <div id="suggestion-message" class="suggestion-message"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <a href="/bundles/" class="back-btn">Back to Bundles</a>
+  </div>
+
+  <script is:inline>
+    const selectedProducts = new Set();
+
+    async function loadProductPills() {
+      try {
+        const res = await fetch('/api/get-products');
+        const data = await res.json();
+        const products = Array.isArray(data.products) ? data.products.slice(0, 10) : [];
+        const pillContainer = document.getElementById('product-pills');
+
+        if (!products.length) {
+          pillContainer.innerHTML = '<p class="loading-msg">No products available.</p>';
+          return;
+        }
+
+        pillContainer.innerHTML = products.map((product, index) => {
+          const name = product.name || 'Product ' + (index + 1);
+          return '<button type="button" class="product-pill" data-product="' + encodeURIComponent(name) + '" onclick="toggleProduct(\'' + encodeURIComponent(name) + '\')">' + name + '</button>';
+        }).join('');
+      } catch (err) {
+        document.getElementById('product-pills').innerHTML = '<p class="loading-msg">Failed to load products.</p>';
+      }
+    }
+
+    function toggleProduct(encodedName) {
+      const name = decodeURIComponent(encodedName);
+      const button = Array.from(document.querySelectorAll('.product-pill')).find(btn => btn.dataset.product === encodedName);
+      if (!button) return;
+
+      if (selectedProducts.has(name)) {
+        selectedProducts.delete(name);
+        button.classList.remove('selected');
+      } else {
+        selectedProducts.add(name);
+        button.classList.add('selected');
+      }
+
+      updateSelectedBox();
+      updateSubmitState();
+    }
+
+    function updateSelectedBox() {
+      const selectedItems = document.getElementById('selected-items');
+      selectedItems.innerHTML = '';
+      if (!selectedProducts.size) {
+        const empty = document.createElement('span');
+        empty.className = 'empty-msg';
+        empty.textContent = 'Pick products to build your bundle.';
+        selectedItems.appendChild(empty);
+        return;
+      }
+      selectedProducts.forEach(product => {
+        const chip = document.createElement('span');
+        chip.className = 'selected-chip';
+        chip.textContent = product;
+        selectedItems.appendChild(chip);
+      });
+    }
+
+    function updateSubmitState() {
+      const button = document.getElementById('submit-suggestion');
+      button.disabled = selectedProducts.size < 2;
+    }
+
+    async function submitSuggestion() {
+      const button = document.getElementById('submit-suggestion');
+      const message = document.getElementById('suggestion-message');
+      const comment = document.getElementById('suggestion-comment').value.trim();
+      const products = Array.from(selectedProducts);
+
+      if (products.length < 2) return;
+      button.disabled = true;
+      message.textContent = 'Submitting...';
+
+      try {
+        const res = await fetch('/api/submit-bundle-suggestion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ products, comment })
+        });
+        const data = await res.json();
+        if (data.success) {
+          message.textContent = 'Suggestion submitted successfully!';
+          clearSelection();
+          document.getElementById('suggestion-comment').value = '';
+        } else {
+          message.textContent = data.error || 'Unable to submit suggestion.';
+        }
+      } catch (err) {
+        message.textContent = 'Failed to submit suggestion. Try again later.';
+      } finally {
+        updateSubmitState();
+      }
+    }
+
+    function clearSelection() {
+      selectedProducts.clear();
+      updateSelectedBox();
+      updateSubmitState();
+      document.getElementById('suggestion-comment').value = '';
+      document.getElementById('suggestion-message').textContent = '';
+      document.querySelectorAll('.product-pill.selected').forEach(btn => btn.classList.remove('selected'));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadProductPills();
+      document.getElementById('submit-suggestion').addEventListener('click', submitSuggestion);
+      document.getElementById('clear-selection').addEventListener('click', clearSelection);
+    });
+  </script>
+</BaseLayout>

@@ -42,6 +42,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </div>
 
   <div class="section">
+    <a href="/suggested-bundles/" class="back-btn">Can't find what you want? Tell us what you are looking for</a>
+  </div>
+
+  <div class="section">
     <a href="/client/" class="back-btn">Back to Orders page</a>
   </div>
 
@@ -246,6 +250,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     document.addEventListener('DOMContentLoaded', function() {
       loadData();
+      try {
+        var bc = new BroadcastChannel('indscent_bundles');
+        bc.onmessage = function(ev) {
+          if (ev.data && ev.data.type === 'bundles-changed') loadBundles();
+        };
+      } catch(e) {}
     });
   </script>
 </BaseLayout>

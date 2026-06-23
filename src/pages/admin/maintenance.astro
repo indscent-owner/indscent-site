@@ -22,6 +22,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <a href="/admin/archived">ARCHIVED</a>
     <a href="/admin/deleted">DELETED</a>
     <a href="/admin/maintenance" class="active">MAINTENANCE</a>
+    <a href="/admin/bundles/">BUNDLES</a>
+    <a href="/admin/suggestions/">SUGGESTIONS</a>
   </div>
   <!-- EXPORT BOX -->
   <div class="admin-box">
@@ -75,54 +77,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </div>
   </div>
-  <!-- BUNDLE MANAGEMENT BOX -->
-  <div class="admin-box" style="margin-top:2rem;">
-    <div class="admin-box-title">BUNDLE CONFIGURATION MAINTENANCE</div>
-    <div class="admin-box-body">
-      <p style="margin-bottom:1rem; color:#555; font-size:0.9rem;">
-        Create new package offerings or update pricing models, item constraints, and product descriptions directly inside the live catalog.
-      </p>
-
-      <form id="bundle-form" style="background:#f8f9fa; padding:1rem; border:1px solid #e2e8f0; margin-bottom:1.5rem;">
-        <input type="hidden" id="bundle-id" value="" />
-
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:1rem; margin-bottom:1rem;">
-          <div>
-            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Bundle Name</label>
-            <input type="text" id="bundle-name" placeholder="e.g., 3-Pack Sample Set" style="width:100%; padding:0.4rem; border:1px solid #ccc;" required />
-          </div>
-          <div>
-            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Price (in Cents/Base)</label>
-            <input type="number" id="bundle-price" placeholder="e.g., 2999" style="width:100%; padding:0.4rem; border:1px solid #ccc;" required />
-          </div>
-          <div>
-            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Female Options Volume</label>
-            <input type="text" id="bundle-vol-female" placeholder="e.g., 3x 5ml" style="width:100%; padding:0.4rem; border:1px solid #ccc;" />
-          </div>
-          <div>
-            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Male Options Volume</label>
-            <input type="text" id="bundle-vol-male" placeholder="e.g., 3x 5ml" style="width:100%; padding:0.4rem; border:1px solid #ccc;" />
-          </div>
-          <div>
-            <label style="display:block; font-weight:bold; font-size:0.85rem; margin-bottom:0.25rem;">Visibility Status</label>
-            <select id="bundle-active" style="width:100%; padding:0.4rem; border:1px solid #ccc; background:#fff;">
-              <option value="1">Active (Visible)</option>
-              <option value="0">Inactive (Hidden)</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:0.5rem;">
-          <button type="submit" class="login-btn" id="bundle-save-btn" style="max-width:180px; background:#27ae60; border-color:#27ae60;">SAVE BUNDLE</button>
-          <button type="button" class="login-btn" id="bundle-reset-btn" style="max-width:120px; background:#7f8c8d; border-color:#7f8c8d; display:none;">CANCEL</button>
-        </div>
-      </form>
-
-      <div id="bundle-msg" style="margin-bottom:1rem; display:none; font-weight:bold;"></div>
-      <button class="login-btn" id="load-bundles-btn" style="max-width:220px; background:#2980b9; border-color:#2980b9; margin-bottom:1rem;">FETCH CURRENT BUNDLES</button>
-      <div id="bundle-list-container"></div>
-    </div>
-  </div>
   <!-- CLEANUP BOX -->
   <div class="admin-box" style="margin-top:2rem;">
     <div class="admin-box-title">ORDER LIST CLEANUP</div>
@@ -140,100 +94,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </div>
 
 <script is:inline>
-  // --- BUNDLE MANAGEMENT LOGIC IMPLEMENTATION ---
-  var bundleMsg = document.getElementById('bundle-msg');
-
-  function fetchAdminBundles() {
-    var container = document.getElementById('bundle-list-container');
-    container.innerHTML = '<p style="color:#666; font-style:italic;">Querying catalog table...</p>';
-
-    fetch('/api/export-csv?target=products')
-      .then(res => res.json())
-      .then(response => {
-        var data = response.data;
-        if (!data || data.length === 0) {
-          container.innerHTML = '<p style="color:#c0392b;">No bundles found inside the live database schema.</p>';
-          return;
-        }
-
-        var html = '<table class="admin-table"><thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Female Vol</th><th>Male Vol</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-        data.forEach(function(b) {
-          html += '<tr>' +
-            '<td>' + b.id + '</td>' +
-            '<td><strong>' + b.name + '</strong></td>' +
-            '<td>' + b.price + '</td>' +
-            '<td>' + (b.volume_female || '-') + '</td>' +
-            '<td>' + (b.volume_male || '-') + '</td>' +
-            '<td>' + (b.active === 1 ? '<span style="color:#27ae60; font-weight:bold;">Active</span>' : '<span style="color:#7f8c8d;">Hidden</span>') + '</td>' +
-            '<td><button class="login-btn edit-b-btn" data-id="'+b.id+'" data-name="'+b.name+'" data-price="'+b.price+'" data-female="'+(b.volume_female||'')+'" data-male="'+(b.volume_male||'')+'" data-active="'+b.active+'" style="padding:0.2rem 0.5rem; font-size:0.8rem; background:#34495e; border-color:#34495e;">EDIT</button></td>' +
-          '</tr>';
-        });
-        html += '</tbody></table>';
-        container.innerHTML = html;
-
-        // Attach dynamic clicks
-        document.querySelectorAll('.edit-b-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            document.getElementById('bundle-id').value = this.getAttribute('data-id');
-            document.getElementById('bundle-name').value = this.getAttribute('data-name');
-            document.getElementById('bundle-price').value = this.getAttribute('data-price');
-            document.getElementById('bundle-vol-female').value = this.getAttribute('data-female');
-            document.getElementById('bundle-vol-male').value = this.getAttribute('data-male');
-            document.getElementById('bundle-active').value = this.getAttribute('data-active');
-
-            document.getElementById('bundle-save-btn').textContent = 'UPDATE CHANGE LIVE';
-            document.getElementById('bundle-reset-btn').style.display = 'inline-block';
-          });
-        });
-      })
-      .catch(err => { container.innerHTML = '<p style="color:#c0392b;">Fetch failure: ' + err.message + '</p>'; });
-  }
-
-  document.getElementById('load-bundles-btn').addEventListener('click', fetchAdminBundles);
-
-  document.getElementById('bundle-reset-btn').addEventListener('click', function() {
-    document.getElementById('bundle-form').reset();
-    document.getElementById('bundle-id').value = "";
-    document.getElementById('bundle-save-btn').textContent = 'SAVE BUNDLE';
-    this.style.display = 'none';
-  });
-  // --- FORM SUBMISSION FOR BUNDLES ---
-  document.getElementById('bundle-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    bundleMsg.style.display = 'block';
-    bundleMsg.style.color = '#333';
-    bundleMsg.textContent = 'Synchronizing configuration changes...';
-
-    var bId = document.getElementById('bundle-id').value;
-    var payload = {
-      action: bId ? 'update' : 'create',
-      id: bId || undefined,
-      name: document.getElementById('bundle-name').value,
-      price: document.getElementById('bundle-price').value,
-      volume_female: document.getElementById('bundle-vol-female').value,
-      volume_male: document.getElementById('bundle-vol-male').value,
-      active: parseInt(document.getElementById('bundle-active').value)
-    };
-
-    fetch('/api/manage-products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.error) throw new Error(data.error);
-      bundleMsg.style.color = '#155724';
-      bundleMsg.textContent = data.message;
-      document.getElementById('bundle-reset-btn').click();
-      fetchAdminBundles();
-    })
-    .catch(err => {
-      bundleMsg.style.color = '#c0392b';
-      bundleMsg.textContent = 'Submission aborted: ' + err.message;
-    });
-  });
-
   // --- AUTH & LOGOUT ---
   document.addEventListener('DOMContentLoaded', function() {
     if (sessionStorage.getItem('admin_auth') !== 'true') {

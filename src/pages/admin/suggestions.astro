@@ -1,0 +1,174 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="inDscent - Bundle Suggestions Admin">
+  <link rel="stylesheet" href="/admin.css" slot="head" />
+
+  <div class="admin-header">
+    <div class="admin-header-left">
+      <img src="/assets/logo.jpg" alt="inDscent Logo" />
+      <div class="admin-header-title">
+        <h1>INDSCENT ADMIN</h1>
+        <p>"Your Signature Identity In Every Drop"</p>
+      </div>
+    </div>
+    <a href="/admin/login/" class="logout-btn" id="logout-btn">LOGOUT</a>
+  </div>
+
+  <div class="admin-nav">
+    <a href="/admin/inbox/">INBOX</a>
+    <a href="/admin/consolidated/">CONSOLIDATED</a>
+    <a href="/admin/archived/">ARCHIVED</a>
+    <a href="/admin/deleted/">DELETED</a>
+    <a href="/admin/maintenance/">MAINTENANCE</a>
+    <a href="/admin/bundles/">BUNDLES</a>
+    <a href="/admin/suggestions/" class="active">SUGGESTIONS</a>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-box" style="margin-bottom:1.5rem;">
+      <div class="admin-box-title" style="align-items:center; gap:1rem;">
+        <span>SUGGESTION STATS</span>
+        <div style="margin-left:auto; display:flex; gap:0.7rem; align-items:center;">
+          <button id="clear-suggestions" class="resolve-btn" style="background:#c0392b;">Clear Results</button>
+          <span id="suggestion-count"></span>
+        </div>
+      </div>
+      <div class="admin-box-body" id="stats-body">
+        <p class="loading-msg">Loading suggestion summary...</p>
+      </div>
+    </div>
+
+    <div class="admin-box">
+      <div class="admin-box-title">
+        <span>RECENT SUGGESTIONS</span>
+      </div>
+      <div class="admin-box-body" id="suggestions-body">
+        <p class="loading-msg">Loading suggestions...</p>
+      </div>
+    </div>
+  </div>
+
+
+  <script is:inline>
+    function formatDate(iso) {
+      try { return new Date(iso).toLocaleString(); } catch (e) { return iso; }
+    }
+
+    async function loadSuggestions() {
+      try {
+        const res = await fetch('/api/get-bundle-suggestions');
+        const data = await res.json();
+        const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+        document.getElementById('suggestion-count').textContent = suggestions.length + ' submissions';
+        renderStats(suggestions);
+        renderSuggestionsTable(suggestions);
+      } catch (err) {
+        document.getElementById('stats-body').innerHTML = '<p class="empty-msg">Unable to load summary.</p>';
+        document.getElementById('suggestions-body').innerHTML = '<p class="empty-msg">Unable to load suggestions.</p>';
+      }
+    }
+
+    function renderStats(suggestions) {
+      const statsBody = document.getElementById('stats-body');
+      if (!suggestions.length) {
+        statsBody.innerHTML = '<p class="empty-msg">No bundle suggestions yet.</p>';
+        return;
+      }
+      const groupCounts = {};
+      suggestions.forEach(item => {
+        try {
+          const products = JSON.parse(item.selected_products || '[]');
+          const groupKey = products.slice().sort().join(' | ');
+          groupCounts[groupKey] = (groupCounts[groupKey] || 0) + 1;
+        } catch (e) {}
+      });
+      const groups = Object.entries(groupCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+
+      const totalCard = '<div class="stat-card"><h3>Total Suggestions</h3><span class="stat-value">' + suggestions.length + '</span></div>';
+      const cards = groups.map(([group, count]) => {
+        return '<div class="group-box"><strong>' + group.split(' | ').join(' and ') + '</strong><span class="group-count">' + count + '</span></div>';
+      }).join('');
+
+      statsBody.innerHTML = '<div class="stats-grid">' + totalCard + cards + '</div>';
+    }
+
+    function renderSuggestionsTable(suggestions) {
+      const suggestionsBody = document.getElementById('suggestions-body');
+      if (!suggestions.length) {
+        suggestionsBody.innerHTML = '<p class="empty-msg">No suggestions have been submitted yet.</p>';
+        return;
+      }
+
+      suggestionsBody.innerHTML = '<table class="suggestion-table"><thead><tr>' +
+        '<th>Date</th><th>Products</th><th>Comment</th>' +
+      '</tr></thead><tbody>' +
+      suggestions.map(item => {
+        const products = JSON.parse(item.selected_products || '[]');
+        const productHtml = products.map(p => '<span class="product-pill">' + p + '</span>').join('');
+        return '<tr>' +
+          '<td>' + formatDate(item.created_at) + '</td>' +
+          '<td>' + productHtml + '</td>' +
+          '<td>' + (item.comment || '<span class="empty-msg">No comment</span>') + '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+    }
+
+    async function resolveSuggestion(id) {
+      const button = event.target;
+      button.disabled = true;
+      try {
+        const res = await fetch('/api/submit-bundle-suggestion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'resolve', id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadSuggestions();
+        } else {
+          alert(data.error || 'Unable to update suggestion.');
+          button.disabled = false;
+        }
+      } catch (err) {
+        alert('Failed to update suggestion.');
+        button.disabled = false;
+      }
+    }
+
+    async function clearSuggestions() {
+      if (!confirm('Clear all suggestion results? This cannot be undone.')) return;
+      try {
+        const res = await fetch('/api/submit-bundle-suggestion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadSuggestions();
+        } else {
+          alert(data.error || 'Unable to clear suggestions.');
+        }
+      } catch (err) {
+        alert('Failed to clear suggestions.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (sessionStorage.getItem('admin_auth') !== 'true') {
+        window.location.href = '/admin/login/';
+        return;
+      }
+      document.getElementById('logout-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        sessionStorage.removeItem('admin_auth');
+        window.location.href = '/admin/login/';
+      });
+      document.getElementById('clear-suggestions').addEventListener('click', clearSuggestions);
+      loadSuggestions();
+    });
+  </script>
+</BaseLayout>
