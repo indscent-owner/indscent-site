@@ -1,0 +1,32 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>inDscent Fragrances - Home</title><link rel="manifest" href="/manifest.json"><link rel="icon" href="/assets/logo.jpg"><meta name="theme-color" content="#1a1a2e"><link rel="stylesheet" href="/home.css"></head> <body> <main>    <button class="install-btn" id="install-btn" title="Install App"> <svg viewBox="0 0 24 24" xmlns="http://w3.org"> <path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 4h14v-2H5v2z"></path> </svg> </button> <div class="home"> <img src="/assets/logo.jpg" alt="inDscent Logo" class="logo"> <p class="tagline">Indulge in the art of fragrance</p> <p class="subtitle">Your Signature Identity In Every Drop</p> <div class="buttons"> <a href="/client/" class="btn btn-primary">Place an Order</a> <a href="/gallery/" class="btn btn-secondary">View Our Collection</a> <a href="/assets/fragrances.pdf" target="_blank" class="btn btn-secondary">Download Fragrance List</a> </div> </div> <script>
+    var deferredPrompt;
+    var instBtn = document.getElementById('install-btn');
+    if (instBtn) instBtn.style.display = 'flex';
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    if (instBtn) {
+      instBtn.addEventListener('click', function() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function() {
+            deferredPrompt = null;
+            instBtn.style.display = 'none';
+          });
+        } else {
+          alert('To install: tap the Share button in your browser then select "Add to Home Screen"');
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', function() {
+      if (instBtn) instBtn.style.display = 'none';
+    });
+  </script>  </main> <footer style="text-align:center;padding:1rem;font-size:0.75rem;color:#888;margin-top:2rem;"> <a href="/admin/login" style="color:#888;text-decoration:none;">&copy; 2026 inDscent Fragrances</a> </footer> <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+      }
+    </script> </body> </html>
