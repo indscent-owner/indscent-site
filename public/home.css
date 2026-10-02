@@ -110,18 +110,18 @@ html, body {
 }
 
 /* MODERN CIRCULAR FLOATING BUTTON WITH NO TEXT */
-.install-btn {
+.install-btn,
+.share-btn {
   position: fixed;
   top: 1rem;
-  right: 1rem;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%; /* Perfect circle */
   width: 42px;
   height: 42px;
-  display: none; /* Controlled by JavaScript flex logic */
+  display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   cursor: pointer;
   z-index: 100;
   backdrop-filter: blur(4px);
@@ -129,12 +129,23 @@ html, body {
   transition: background 0.2s;
 }
 
-.install-btn:hover {
+.install-btn {
+  right: 1rem;
+  display: none;
+}
+
+.share-btn {
+  left: 1rem;
+}
+
+.install-btn:hover,
+.share-btn:hover {
   background: rgba(201, 168, 76, 0.8);
   border-color: #c9a84c;
 }
 
-.install-btn svg {
+.install-btn svg,
+.share-btn svg {
   width: 20px;
   height: 20px;
   fill: #ffffff;

@@ -1,5 +1,5 @@
 ---
-const { title = "inDscent Fragrances" } = Astro.props;
+const { title = "inDscent Fragrances", showFooter = true } = Astro.props;
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -16,9 +16,11 @@ const { title = "inDscent Fragrances" } = Astro.props;
     <main>
       <slot />
     </main>
-    <footer style="text-align:center;padding:1rem;font-size:0.75rem;color:#888;margin-top:2rem;">
-      <a href="/admin/login" style="color:#888;text-decoration:none;">&copy; 2026 inDscent Fragrances</a>
-    </footer>
+    {showFooter && (
+      <footer style="text-align:center;padding:1rem;font-size:0.75rem;color:#888;margin-top:2rem;">
+        <a href="/admin/login" style="color:#888;text-decoration:none;">&copy; 2026 inDscent Fragrances</a>
+      </footer>
+    )}
     <script is:inline>
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js');

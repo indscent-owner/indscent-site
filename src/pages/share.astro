@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="inDscent - Share" showFooter={false}>
+  <link rel="stylesheet" href="/share.css" slot="head" />
+
+  <div class="share-page">
+    <div class="share-card">
+      <div class="share-brand">
+        <img src="/assets/logo.jpg" alt="inDscent Logo" />
+        <div>
+          <div class="share-brand-name">INDSCENT FRAGRANCES</div>
+          <div class="share-brand-tag">Your Signature Identity In Every Drop</div>
+        </div>
+      </div>
+
+      <div class="share-qr-wrap">
+        <img id="share-qr" src="" alt="QR code for inDscent Fragrances" />
+      </div>
+
+      <button id="share-link-btn" class="share-link-btn" type="button">Share link</button>
+      <a href="/home/" class="share-back-btn" type="button">Back</a>
+      <div id="share-status" class="share-status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script is:inline>
+    const pageUrl = 'https://indscent.pages.dev/';
+    const qrImg = document.getElementById('share-qr');
+    if (qrImg) {
+      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=' + encodeURIComponent(pageUrl);
+    }
+
+    const shareButton = document.getElementById('share-link-btn');
+    const shareStatus = document.getElementById('share-status');
+
+    shareButton?.addEventListener('click', async function() {
+      const shareData = {
+        title: 'inDscent Fragrances',
+        text: 'Visit inDscent Fragrances',
+        url: pageUrl
+      };
+
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+          if (shareStatus) shareStatus.textContent = 'Shared successfully.';
+          return;
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(pageUrl);
+          if (shareStatus) shareStatus.textContent = 'Link copied to clipboard.';
+          return;
+        }
+
+        if (shareStatus) shareStatus.textContent = 'Share is not available on this device.';
+      } catch (err) {
+        if (shareStatus) shareStatus.textContent = 'Share cancelled.';
+      }
+    });
+  </script>
+</BaseLayout>

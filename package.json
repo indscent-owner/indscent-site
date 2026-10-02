@@ -13,6 +13,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^6.4.8"
+    "astro": "^6.4.8",
+    "jspdf": "^4.2.1",
+    "qrcode-generator": "^2.0.4"
   }
 }

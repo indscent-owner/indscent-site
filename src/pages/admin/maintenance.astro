@@ -77,6 +77,28 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </div>
   </div>
+
+  <div class="admin-box" style="margin-top:2rem;">
+    <div class="admin-box-title">BROCHURE PDF MAINTENANCE</div>
+    <div class="admin-box-body">
+      <p style="margin-bottom:1rem; color:#555; font-size:0.9rem;">
+        Generate a brochure from the current catalogue, or upload a PDF to make it the live brochure. The previous version remains available.
+      </p>
+      <div style="display:flex; gap:1rem; flex-wrap: wrap;">
+        <button class="login-btn" id="generate-brochure-btn" style="max-width:240px;">GENERATE PDF</button>
+        <button class="login-btn" id="use-previous-brochure-btn" style="max-width:240px; background:#2c3e50; border-color:#2c3e50;">USE PREVIOUS PDF</button>
+      </div>
+      <div class="form-group" style="margin-top:1rem; max-width:520px;">
+        <label for="brochure-upload-key" style="display:block; font-weight:bold; margin-bottom:0.5rem; color:#1a1a2e;">PDF management key</label>
+        <input id="brochure-upload-key" type="password" autocomplete="off" placeholder="Enter the Cloudflare brochure key" style="width:100%; padding:0.6rem; border:1px solid #ccc;" />
+        <label for="brochure-file" style="display:block; font-weight:bold; margin:1rem 0 0.5rem; color:#1a1a2e;">Upload a PDF as the live brochure (max 1 MB)</label>
+        <input id="brochure-file" type="file" accept="application/pdf,.pdf" style="width:100%; padding:0.5rem; border:1px solid #ccc;" />
+      </div>
+      <button class="login-btn" id="upload-brochure-btn" style="max-width:240px; margin-top:0.5rem;">UPLOAD PDF</button>
+      <div id="brochure-msg" style="margin-top:1rem; display:none; font-weight:bold;"></div>
+    </div>
+  </div>
+
   <!-- CLEANUP BOX -->
   <div class="admin-box" style="margin-top:2rem;">
     <div class="admin-box-title">ORDER LIST CLEANUP</div>
@@ -265,6 +287,110 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       });
     };
     reader.readAsText(file);
+  });
+
+  function downloadPdf(response, filename) {
+    return response.blob().then(function(blob) {
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(href);
+    });
+  }
+
+  document.getElementById('generate-brochure-btn').addEventListener('click', function() {
+    const msg = document.getElementById('brochure-msg');
+    const key = document.getElementById('brochure-upload-key').value;
+    if (!key) {
+      msg.style.display = 'block';
+      msg.style.color = '#c0392b';
+      msg.textContent = 'Enter the PDF management key first.';
+      return;
+    }
+    msg.style.display = 'block';
+    msg.style.color = '#333';
+    msg.textContent = 'Generating brochure PDF...';
+
+    fetch('/api/brochure-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({ action: 'generate' })
+    })
+      .then(function(res) {
+        if (!res.ok) return res.json().then(function(data) { throw new Error(data.error || 'Failed'); });
+        return downloadPdf(res, 'indscent-brochure.pdf').then(function() {
+          msg.style.color = '#155724';
+          msg.textContent = 'New brochure PDF generated and downloaded successfully.';
+        });
+      })
+      .catch(function(err) {
+        msg.style.color = '#c0392b';
+        msg.textContent = 'PDF generation failed: ' + err.message;
+      });
+  });
+
+  document.getElementById('upload-brochure-btn').addEventListener('click', function() {
+    const msg = document.getElementById('brochure-msg');
+    const key = document.getElementById('brochure-upload-key').value;
+    const fileInput = document.getElementById('brochure-file');
+    const file = fileInput.files[0];
+    if (!key || !file) {
+      msg.style.display = 'block';
+      msg.style.color = '#c0392b';
+      msg.textContent = !key ? 'Enter the PDF management key first.' : 'Choose a PDF file to upload.';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    msg.style.display = 'block';
+    msg.style.color = '#333';
+    msg.textContent = 'Uploading PDF to the live brochure...';
+
+    fetch('/api/brochure-pdf', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + key },
+      body: formData
+    })
+      .then(function(res) {
+        return res.json().then(function(data) {
+          if (!res.ok) throw new Error(data.error || 'Upload failed.');
+          return data;
+        });
+      })
+      .then(function(data) {
+        msg.style.color = '#155724';
+        msg.textContent = data.message || 'Uploaded PDF is now the live brochure.';
+        fileInput.value = '';
+      })
+      .catch(function(err) {
+        msg.style.color = '#c0392b';
+        msg.textContent = 'PDF upload failed: ' + err.message;
+      });
+  });
+
+  document.getElementById('use-previous-brochure-btn').addEventListener('click', function() {
+    const msg = document.getElementById('brochure-msg');
+    msg.style.display = 'block';
+    msg.style.color = '#333';
+    msg.textContent = 'Fetching previous brochure PDF...';
+
+    fetch('/api/brochure-pdf?previous=1')
+      .then(function(res) {
+        if (!res.ok) return res.json().then(function(data) { throw new Error(data.error || 'No previous PDF found'); });
+        return downloadPdf(res, 'indscent-previous-brochure.pdf').then(function() {
+          msg.style.color = '#155724';
+          msg.textContent = 'Previous brochure PDF downloaded successfully.';
+        });
+      })
+      .catch(function(err) {
+        msg.style.color = '#c0392b';
+        msg.textContent = 'Previous PDF not available: ' + err.message;
+      });
   });
 </script>
 </BaseLayout>

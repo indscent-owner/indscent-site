@@ -4,8 +4,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <BaseLayout title="inDscent Fragrances - Home">
   <link rel="stylesheet" href="/home.css" slot="head" />
 
+  <button class="share-btn" id="share-btn" title="Share page" aria-label="Open share page">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M18 16a2.5 2.5 0 0 0-1.9 1l-7.5-4.1a2.8 2.8 0 0 0 0-1.8L16.1 7a2.5 2.5 0 1 0-.5-1.5L8.1 9.6a2.5 2.5 0 1 0 0 4.8l7.5 4.1a2.5 2.5 0 1 0 2.4-2.5z"/>
+    </svg>
+  </button>
+
   <!-- Clean icon-only floating action download button -->
-  <button class="install-btn" id="install-btn" title="Install App">
+  <button class="install-btn" id="install-btn" title="Install App" aria-label="Install app">
     <svg viewBox="0 0 24 24" xmlns="http://w3.org">
       <path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 4h14v-2H5v2z"/>
     </svg>
@@ -18,14 +24,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="buttons">
       <a href="/client/" class="btn btn-primary">Place an Order</a>
       <a href="/gallery/" class="btn btn-secondary">View Our Collection</a>
-      <a href="/assets/fragrances.pdf" target="_blank" class="btn btn-secondary">Download Fragrance List</a>
+      <a href="/api/brochure-pdf" download="indscent-brochure.pdf" class="btn btn-secondary">Download Fragrance List</a>
     </div>
   </div>
 
   <script is:inline>
     var deferredPrompt;
     var instBtn = document.getElementById('install-btn');
+    var shareBtn = document.getElementById('share-btn');
     if (instBtn) instBtn.style.display = 'flex';
+
+    if (shareBtn) {
+      shareBtn.addEventListener('click', function() {
+        window.location.href = '/share/';
+      });
+    }
 
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();

@@ -1,0 +1,133 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: #111111;
+  font-family: Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+main {
+  width: 100%;
+  min-width: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-page {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: #111111;
+}
+
+.share-card {
+  width: min(100%, 520px);
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.share-brand {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  justify-content: flex-start;
+}
+
+.share-brand img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.share-brand-name {
+  color: #111111;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.share-brand-tag {
+  color: #5b5b5b;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.share-qr-wrap {
+  width: min(72vw, 360px);
+  aspect-ratio: 1;
+  padding: 0.8rem;
+  background: white;
+  border: 2px solid #d8d8d8;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-qr-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.share-link-btn,
+.share-back-btn {
+  width: min(76%, 300px);
+  border: none;
+  border-radius: 12px;
+  background: #c9a84c;
+  color: #111111;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 10px 18px rgba(201, 168, 76, 0.28);
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.share-link-btn:hover,
+.share-back-btn:hover {
+  filter: brightness(0.96);
+}
+
+.share-status {
+  min-height: 1.2rem;
+  font-size: 0.85rem;
+  color: #2e3c43;
+  text-align: center;
+}
+
+.share-footer-link {
+  color: #666666;
+  text-decoration: none;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.share-footer-link:hover {
+  text-decoration: underline;
+}

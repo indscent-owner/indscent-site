@@ -51,6 +51,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return '<span class="order-status-pill pill-orange">PROCESSED</span>';
     }
 
+    function canDeleteOrder(status, delivered) {
+      var s = (status || '').toLowerCase();
+      return s === 'inbox' && delivered !== 1;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       var device_id = localStorage.getItem('indscent_device_id');
       var container = document.getElementById('orders-container');
@@ -164,9 +169,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 '<div class="order-subtotal">Bundle Total: R' + bundleTotal + '</div>';
             }
 
+            var deleteAction = '';
+            if (canDeleteOrder(order.status, order.delivered)) {
+              var deleteIds = JSON.stringify(order.items.map(function(item) { return item.id; }));
+              deleteAction = '<button class="delete-order-btn" type="button" data-order-ids=' + JSON.stringify(deleteIds) + '>Delete order</button>';
+            }
+
             return '<div class="order-card">' +
               '<div class="order-header">' +
                 '<span class="order-date">' + order.date + '</span>' +
+                deleteAction +
                 statusLabel(order.status, order.delivered) +
               '</div>' +
               '<div class="order-name">' + order.name + '</div>' +
@@ -175,6 +187,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               '<div class="order-grand-total">Grand Total: R' + grandTotal + '</div>' +
             '</div>';
           }).join('');
+
+          document.querySelectorAll('.delete-order-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+              var ids = JSON.parse(this.getAttribute('data-order-ids'));
+              if (!Array.isArray(ids) || ids.length === 0) return;
+              if (!confirm('Delete this order permanently from your recent orders?')) return;
+
+              fetch('/api/update-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', source: 'client', device_id: device_id, ids: ids })
+              })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                  if (result && result.success) {
+                    location.reload();
+                    return;
+                  }
+                  alert('Unable to delete this order right now.');
+                })
+                .catch(function() {
+                  alert('Unable to delete this order right now.');
+                });
+            });
+          });
         })
         .catch(function(err) {
           console.error(err);

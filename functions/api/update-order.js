@@ -1,22 +1,46 @@
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
-    const { action, id, ids, invoice_number } = body;
+    const { action, id, ids, invoice_number, device_id, source } = body;
 
     if (action === 'delete') {
-      const orderIds = ids || [id];
+      const orderIds = Array.isArray(ids) ? [...new Set(ids)] : [id];
+      if (orderIds.length === 0 || orderIds.some(function(orderId) { return !Number.isInteger(Number(orderId)); })) {
+        return new Response(JSON.stringify({ error: 'Invalid order IDs' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      if (source === 'client' && !device_id) {
+        return new Response(JSON.stringify({ error: 'Missing device ID' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      const rows = [];
       for (const orderId of orderIds) {
         const row = await context.env.DB.prepare(
           `SELECT * FROM orders WHERE id = ?`
         ).bind(orderId).first();
-        if (row) {
-          await context.env.DB.prepare(
-            `INSERT INTO deleted_orders (original_id, device_id, name, surname, contact, email, fragrance_name, product_name, volume, price, quantity, gender, order_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          ).bind(row.id, row.device_id, row.name, row.surname, row.contact, row.email, row.fragrance_name, row.product_name, row.volume, row.price, row.quantity, row.gender, row.order_date).run();
-          await context.env.DB.prepare(`DELETE FROM orders WHERE id = ?`).bind(orderId).run();
+        if (!row || String(row.status || '').toLowerCase() !== 'inbox' || (source === 'client' && row.device_id !== device_id)) {
+          return new Response(JSON.stringify({ error: 'Order is not available for deletion' }), {
+            status: 409,
+            headers: { 'Content-Type': 'application/json' }
+          });
         }
+        rows.push(row);
       }
+
+      const statements = [];
+      for (const row of rows) {
+        statements.push(context.env.DB.prepare(
+          `INSERT INTO deleted_orders (original_id, device_id, name, surname, contact, email, fragrance_name, product_name, volume, price, quantity, gender, order_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(row.id, row.device_id, row.name, row.surname, row.contact, row.email, row.fragrance_name, row.product_name, row.volume, row.price, row.quantity, row.gender, row.order_date));
+        statements.push(context.env.DB.prepare(`DELETE FROM orders WHERE id = ?`).bind(row.id));
+      }
+      await context.env.DB.batch(statements);
     } else if (action === 'archive') {
       if (!invoice_number) {
         return new Response(JSON.stringify({ error: 'Missing invoice number' }), {
